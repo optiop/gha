@@ -1,0 +1,12 @@
+name: PR Checks
+description: |
+  This action runs checks on a PR to ensure it meets the requirements.
+  It will check for a valid title, a valid description, and that the PR
+  is not a draft PR.
+inputs:
+  github-token:
+    description: 'GitHub token to access the PR details'
+    required: true
+runs:
+  using: 'node20'
+  main: 'index.js'
