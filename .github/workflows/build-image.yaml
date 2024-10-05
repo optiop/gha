@@ -12,11 +12,7 @@ on:
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [ 'self-hosted', 'ubuntu-latest' ]
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
     timeout-minutes: 180
