@@ -170,6 +170,9 @@ jobs:
 
       - name: Install dev dependencies
         run: npm ci
+ 
+      - name: Stop all running containers
+        run: docker stop $(docker ps -a -q) || true
 
       - name: Start Grafana
         run: |
