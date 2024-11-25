@@ -117,13 +117,48 @@ jobs:
           name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}
           path: ${{ matrix.WORKING_DIRECTORY }}/${{ steps.metadata.outputs.plugin-id }}
           retention-days: 5
+
   build-image:
     name: Build docker image
     needs: build-plugin
     runs-on: ubuntu-latest
+    outputs:
+      plugin-id: ${{ needs.build-plugin.outputs.plugin-id }}
+      plugin-version: ${{ needs.build-plugin.outputs.plugin-version }}
     steps:
-      - name: hello world
+      - name: Checkout
+        uses: actions/checkout@v4
+       
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          name: ${{ needs.build-plugin.outputs.plugin-id }}-${{ needs.build-plugin.outputs.plugin-version }}
+
+      - name: Build nexvision grafana image
         run: |
-          echo "This is a the new job. From here, we are going to use the plugins build in build-plugin job"
-          echo "We pull a Grafana image, we add all the plugins from the previous step"
-          echo "We push the image to ECR"
+          docker build -t incident-management-app:latest -f- . <<EOF
+          FROM grafana/grafana:latest
+          COPY dist/${{ needs.build-plugin.outputs.plugin-id }} /var/lib/grafana/plugins/${{ needs.build-plugin.outputs.plugin-id }}
+          EOF
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Tag Docker image
+        run: |
+          docker tag incident-management-app:latest ${{ secrets.AWS_REGISTRY }}/${{ secrets.FRONTEND_IMAGE_REPO }}:latest
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.AWS_REGISTRY }}/${{ secrets.FRONTEND_IMAGE_REPO }}:latest
+      
+      
+      
