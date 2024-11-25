@@ -35,10 +35,10 @@ jobs:
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
     steps:
+      - uses: actions/checkout@v4
       - name: Print Hello World
         run: echo "hello-world"
-
-      - uses: actions/checkout@v4
+        
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
