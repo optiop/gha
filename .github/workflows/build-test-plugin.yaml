@@ -36,16 +36,16 @@ jobs:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - name: Print Hello World
-        run: echo "hello-world"
-        
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: ${{ matrix.WORKING_DIRECTORY }}/package-lock.json
-
+      
+      - name: Print Hello World
+        run: echo "hello-world"
+        
       - name: Install dependencies
         run: npm ci
 
