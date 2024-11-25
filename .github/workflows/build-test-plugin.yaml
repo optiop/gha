@@ -132,7 +132,7 @@ jobs:
       - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          path: src
+          path: src/optiop
           name: optiop-incidentmanagement-app-1.0.0
 
       - name: see the plugin
@@ -142,8 +142,7 @@ jobs:
         run: |
           docker build -t incident-management-app:latest -f- . <<EOF
           FROM grafana/grafana:latest
-          COPY ./src/optiop-incidentmanagement-app-1.0.0 /var/lib/grafana/plugins/optiop-incidentmanagement-app-1.0.0
-          EOF
+          COPY ./src/optiop-incidentmanagement-app /var/lib/grafana/plugins/
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
