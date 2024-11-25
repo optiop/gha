@@ -156,11 +156,11 @@ jobs:
 
       - name: Tag Docker image
         run: |
-          docker tag incident-management-app:latest ${{ secrets.AWS_REGISTRY }}/${{ secrets.FRONTEND_IMAGE_REPO }}:latest
+          docker tag incident-management-app:latest ${{ secrets.FRONTEND_IMAGE_REPO }}:latest
 
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_REGISTRY }}/${{ secrets.FRONTEND_IMAGE_REPO }}:latest
+          docker push ${{ secrets.FRONTEND_IMAGE_REPO }}:latest
       
       
       
