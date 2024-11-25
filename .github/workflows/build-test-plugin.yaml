@@ -19,7 +19,7 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "Generated matrix: $matrix"
 
-  build:
+  build-plugin:
     name: Build, lint and unit tests
     needs: generate-matrix
     runs-on: ubuntu-latest
@@ -117,3 +117,10 @@ jobs:
           name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}
           path: ${{ matrix.WORKING_DIRECTORY }}/${{ steps.metadata.outputs.plugin-id }}
           retention-days: 5
+  build-image:
+    steps:
+      - name: hello world
+        run: |
+          echo "This is a the new job. From here, we are going to use the plugins build in build-plugin job"
+          echo "We pull a Grafana image, we add all the plugins from the previous step"
+          echo "We push the image to ECR"
