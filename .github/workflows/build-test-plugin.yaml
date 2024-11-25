@@ -129,20 +129,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
        
-      - name: Create dist directory
-        run: mkdir -p dist
-
       - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          path: ./src/optiop-incidentmanagement-app/optiop-incidentmanagement-app
+          path: src
           name: optiop-incidentmanagement-app-1.0.0
+
+      - name: see the plugin
+        run: ls src    
 
       - name: Build nexvision grafana image
         run: |
           docker build -t incident-management-app:latest -f- . <<EOF
           FROM grafana/grafana:latest
-          COPY ./src/optiop-incidentmanagement-app/optiop-incidentmanagement-app/optiop-incidentmanagement-app-1.0.0 /var/lib/grafana/plugins/${{ needs.build-plugin.outputs.plugin-id }}
+          COPY ./src/optiop-incidentmanagement-app-1.0.0 /var/lib/grafana/plugins/${{ needs.build-plugin.outputs.plugin-id }}
           EOF
 
       - name: Configure AWS credentials
