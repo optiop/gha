@@ -118,6 +118,9 @@ jobs:
           path: ${{ matrix.WORKING_DIRECTORY }}/${{ steps.metadata.outputs.plugin-id }}
           retention-days: 5
   build-image:
+    name: Build docker image
+    needs: build-plugin
+    runs-on: ubuntu-latest
     steps:
       - name: hello world
         run: |
