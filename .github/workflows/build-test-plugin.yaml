@@ -153,6 +153,8 @@ jobs:
            -f- . <<EOF
           FROM grafana/grafana:latest
           COPY ./plugins/ /var/lib/grafana/plugins/
+          RUN chmod -R grafana /var/lib/grafana/plugins
+          RUN chown -R grafana /var/lib/grafana/plugins 
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -167,7 +169,7 @@ jobs:
       - name: Push Docker image to ECR
         run: |
           docker push ${{ secrets.FRONTEND_IMAGE_REPO }}:latest
-          docker push ${{ secrets.FRONTEND_IMAGE_REPO }}::${{ steps.vars.outputs.sha_short }}
+          docker push ${{ secrets.FRONTEND_IMAGE_REPO }}:${{ steps.vars.outputs.sha_short }}
       
       
       
