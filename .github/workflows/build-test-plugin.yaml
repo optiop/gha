@@ -145,7 +145,7 @@ jobs:
       - name: Build grafana image
         run: |
           docker build -t incident-management-app:latest \
-           -t  ${{ secrets.FRONTEND_IMAGE_REPO }}::${{ steps.vars.outputs.sha_short }} \
+           -t  ${{ secrets.FRONTEND_IMAGE_REPO }}:${{ steps.vars.outputs.sha_short }} \
            -t  ${{ secrets.FRONTEND_IMAGE_REPO }}:latest \
            -f- . <<EOF
           FROM grafana/grafana:latest
