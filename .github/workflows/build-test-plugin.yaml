@@ -138,9 +138,16 @@ jobs:
       - name: see the plugin
         run: ls plugins    
 
+      - name: Set outputs
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Build grafana image
         run: |
-          docker build -t incident-management-app:latest -f- . <<EOF
+          docker build -t incident-management-app:latest \
+           -t  ${{ secrets.FRONTEND_IMAGE_REPO }}::${{ steps.vars.outputs.sha_short }} \
+           -t  ${{ secrets.FRONTEND_IMAGE_REPO }}:latest \
+           -f- . <<EOF
           FROM grafana/grafana:latest
           COPY ./plugins/ /var/lib/grafana/plugins/
 
@@ -154,13 +161,10 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Tag Docker image
-        run: |
-          docker tag incident-management-app:latest ${{ secrets.FRONTEND_IMAGE_REPO }}:latest
-
       - name: Push Docker image to ECR
         run: |
           docker push ${{ secrets.FRONTEND_IMAGE_REPO }}:latest
+          docker push ${{ secrets.FRONTEND_IMAGE_REPO }}::${{ steps.vars.outputs.sha_short }}
       
       
       
