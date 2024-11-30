@@ -132,17 +132,17 @@ jobs:
       - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          path: src/optiop
-          name: optiop-incidentmanagement-app-1.0.0
+          path: src/
+          name: ${{ needs.build-plugin.outputs.plugin-id }}-${{ needs.build-plugin.outputs.plugin-version }}
 
       - name: see the plugin
         run: ls src    
 
-      - name: Build nexvision grafana image
+      - name: Build grafana image
         run: |
           docker build -t incident-management-app:latest -f- . <<EOF
           FROM grafana/grafana:latest
-          COPY ./src/optiop/optiop-incidentmanagement-app /var/lib/grafana/plugins/
+          COPY ./src/${{ needs.build-plugin.outputs.plugin-id }}-${{ needs.build-plugin.outputs.plugin-version }} /var/lib/grafana/plugins/
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
