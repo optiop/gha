@@ -126,6 +126,9 @@ jobs:
       plugin-id: ${{ needs.build-plugin.outputs.plugin-id }}
       plugin-version: ${{ needs.build-plugin.outputs.plugin-version }}
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
       - name: Create plugins directory
         run: mkdir -p plugins
 
@@ -137,9 +140,6 @@ jobs:
 
       - name: see the plugin
         run: ls plugins    
-
-      - name: checkout
-        uses: actions/checkout@v4
 
       - name: Set outputs
         id: vars
