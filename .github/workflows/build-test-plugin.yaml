@@ -136,7 +136,7 @@ jobs:
           name: ${{ needs.build-plugin.outputs.plugin-id }}-${{ needs.build-plugin.outputs.plugin-version }}
 
       - name: see the plugin
-        run: ls src    
+        run: ls plugins    
 
       - name: Build grafana image
         run: |
