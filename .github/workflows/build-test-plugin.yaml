@@ -152,9 +152,8 @@ jobs:
            -t  ${{ secrets.FRONTEND_IMAGE_REPO }}:latest \
            -f- . <<EOF
           FROM grafana/grafana:latest
-          RUN groupadd -r grafana && useradd -r -g grafana grafana
+          USER grafana
           COPY ./plugins/ /var/lib/grafana/plugins/
-          RUN chown -R grafana:grafana /var/lib/grafana/plugins
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
