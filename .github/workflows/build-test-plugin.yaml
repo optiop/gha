@@ -126,13 +126,13 @@ jobs:
       plugin-id: ${{ needs.build-plugin.outputs.plugin-id }}
       plugin-version: ${{ needs.build-plugin.outputs.plugin-version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-       
+      - name: Create plugins directory
+        run: mkdir -p plugins
+
       - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          path: src/
+          path: plugins/${{ needs.build-plugin.outputs.plugin-id }}
           name: ${{ needs.build-plugin.outputs.plugin-id }}-${{ needs.build-plugin.outputs.plugin-version }}
 
       - name: see the plugin
@@ -142,7 +142,7 @@ jobs:
         run: |
           docker build -t incident-management-app:latest -f- . <<EOF
           FROM grafana/grafana:latest
-          COPY ./src/${{ needs.build-plugin.outputs.plugin-id }}-${{ needs.build-plugin.outputs.plugin-version }} /var/lib/grafana/plugins/
+          COPY ./plugins/ /var/lib/grafana/plugins/
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
