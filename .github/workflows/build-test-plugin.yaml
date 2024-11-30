@@ -153,8 +153,7 @@ jobs:
            -f- . <<EOF
           FROM grafana/grafana:latest
           COPY ./plugins/ /var/lib/grafana/plugins/
-          RUN chmod -R grafana /var/lib/grafana/plugins
-          RUN chown -R grafana /var/lib/grafana/plugins 
+          RUN chown -R grafana:grafana /var/lib/grafana/plugins
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
