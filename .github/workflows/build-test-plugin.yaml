@@ -142,7 +142,7 @@ jobs:
         run: |
           docker build -t incident-management-app:latest -f- . <<EOF
           FROM grafana/grafana:latest
-          COPY ./src/optiop-incidentmanagement-app /var/lib/grafana/plugins/
+          COPY ./src/optiop/optiop-incidentmanagement-app /var/lib/grafana/plugins/
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
