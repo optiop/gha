@@ -19,7 +19,7 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "Generated matrix: $matrix"
 
-  build:
+  build-plugin:
     name: Build, lint and unit tests
     needs: generate-matrix
     runs-on: ubuntu-latest
@@ -117,3 +117,58 @@ jobs:
           name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}
           path: ${{ matrix.WORKING_DIRECTORY }}/${{ steps.metadata.outputs.plugin-id }}
           retention-days: 5
+
+  build-image:
+    name: Build docker image
+    needs: build-plugin
+    runs-on: ubuntu-latest
+    outputs:
+      plugin-id: ${{ needs.build-plugin.outputs.plugin-id }}
+      plugin-version: ${{ needs.build-plugin.outputs.plugin-version }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Create plugins directory
+        run: mkdir -p plugins
+
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          path: plugins/${{ needs.build-plugin.outputs.plugin-id }}
+          name: ${{ needs.build-plugin.outputs.plugin-id }}-${{ needs.build-plugin.outputs.plugin-version }}
+
+      - name: see the plugin
+        run: ls plugins    
+
+      - name: Set outputs
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build grafana image
+        run: |
+          docker build -t incident-management-app:latest \
+           -t  ${{ secrets.FRONTEND_IMAGE_REPO }}:${{ steps.vars.outputs.sha_short }} \
+           -t  ${{ secrets.FRONTEND_IMAGE_REPO }}:latest \
+           -f- . <<EOF
+          FROM grafana/grafana:latest
+          USER grafana
+          COPY ./plugins/ /var/lib/grafana/plugins/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.FRONTEND_IMAGE_REPO }}:latest
+          docker push ${{ secrets.FRONTEND_IMAGE_REPO }}:${{ steps.vars.outputs.sha_short }}
+      
+      
+      
