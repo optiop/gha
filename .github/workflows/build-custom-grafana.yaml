@@ -171,4 +171,3 @@ jobs:
         run: |
           docker push ${{ inputs.image-name }}:latest
           docker push ${{ inputs.image-name }}:${{ steps.vars.outputs.sha_short }}
- 
