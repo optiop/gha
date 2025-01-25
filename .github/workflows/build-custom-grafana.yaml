@@ -167,7 +167,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
   
-      - name: Push Docker image to ECR
+      - name: Push Docker image to GHCR
         run: |
           docker push ${{ inputs.image-name }}:latest
           docker push ${{ inputs.image-name }}:${{ steps.vars.outputs.sha_short }}
