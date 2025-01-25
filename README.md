@@ -3,10 +3,9 @@
 
 ## Build
 ```bash
-cd pr-checks
-npm i -g @vercel/ncc
-ncc build index.js
-mv dist/index.js .
+npm install
+ncc build pr-checks/index.ts  
+mv dist/index.js pr-checks
 ```
 
 ## References
