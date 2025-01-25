@@ -1,4 +1,4 @@
-name: Build and Test Plugins
+name: Build Custom Grafana
 
 on:
   workflow_call:
@@ -169,6 +169,4 @@ jobs:
         run: |
           docker push ${{ secrets.FRONTEND_IMAGE_REPO }}:latest
           docker push ${{ secrets.FRONTEND_IMAGE_REPO }}:${{ steps.vars.outputs.sha_short }}
-      
-      
-      
+ 
