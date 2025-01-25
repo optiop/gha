@@ -6,6 +6,7 @@
 cd pr-checks
 npm i -g @vercel/ncc
 ncc build index.js
+mv dist/index.js .
 ```
 
 ## References
