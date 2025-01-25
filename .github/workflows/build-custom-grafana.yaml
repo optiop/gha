@@ -6,9 +6,9 @@ on:
       image-name:
         required: true
         type: string 
-      grafana-access-token-key:
+    secrets:
+      GRAFANA_ACCESS_TOKEN_KEY:
         required: true
-        type: string
 
 jobs:
   generate-matrix:
@@ -40,7 +40,7 @@ jobs:
       plugin-version: ${{ steps.metadata.outputs.plugin-version }}
       has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     env:
-      GRAFANA_ACCESS_POLICY_TOKEN: ${{ inputs.grafana-access-token-key }}
+      GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js environment
