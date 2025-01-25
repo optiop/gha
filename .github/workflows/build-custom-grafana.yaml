@@ -7,7 +7,7 @@ on:
         required: true
         type: string 
     secrets:
-      GRAFANA_ACCESS_TOKEN_KEY:
+      GRAFANA_ACCESS_POLICY_TOKEN:
         required: true
 
 jobs:
