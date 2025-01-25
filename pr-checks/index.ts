@@ -13,11 +13,11 @@ async function run() {
     }
 
     const prBody = context.payload.pull_request.body || '';
-    const regex = /notion\.so\/OPT-\d+/;
+    const regex = /notion\.so\/\w+-\d+/;
 
     if (!regex.test(prBody)) {
       core.setFailed('The PR body does not include a link \
-        like notion.so/OPT-xxx.');
+        like notion.so/xxx-xxx.');
     } else {
       core.info('The PR body includes a valid Notion link.');
     } 
