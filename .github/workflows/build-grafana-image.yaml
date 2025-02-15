@@ -10,7 +10,6 @@ on:  # yamllint disable-line rule:truthy
 
 jobs:
   build-image:
-    permissions: write-all
     strategy:
       matrix:
         runner:
@@ -56,7 +55,6 @@ jobs:
     needs: build-image
     env:
       IMAGE: ghcr.io/optiop/${{ inputs.project-name }}
-    permissions: write-all
     steps:
       - name: checkout
         uses: actions/checkout@v4
