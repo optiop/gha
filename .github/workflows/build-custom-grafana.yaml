@@ -127,7 +127,6 @@ jobs:
     name: Build docker image
     needs: build-plugin
     runs-on: ubuntu-latest
-    permissions: write-all
     outputs:
       plugin-id: ${{ needs.build-plugin.outputs.plugin-id }}
       plugin-version: ${{ needs.build-plugin.outputs.plugin-version }}
