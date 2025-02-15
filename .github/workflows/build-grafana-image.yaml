@@ -1,6 +1,7 @@
+---
 name: Build and publish Grafana image to ghcr.io
 
-on:
+on:  # yamllint disable-line rule:truthy
   workflow_call:
     inputs:
       project-name:
