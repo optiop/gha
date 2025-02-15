@@ -120,13 +120,16 @@ jobs:
         id: package-plugin
         run: |
           mv dist ${{ steps.metadata.outputs.plugin-id }}
-          zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
+          zip ${{ steps.metadata.outputs.archive }} \
+            ${{ steps.metadata.outputs.plugin-id }} -r
 
       - name: Archive Build
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}
-          path: ${{ matrix.WORKING_DIRECTORY }}/${{ steps.metadata.outputs.plugin-id }}
+          name: ${{ steps.metadata.outputs.plugin-id }}-\
+            ${{ steps.metadata.outputs.plugin-version }}
+          path: ${{ matrix.WORKING_DIRECTORY }}/\
+            ${{ steps.metadata.outputs.plugin-id }}
           retention-days: 5
 
   build-image:
@@ -163,7 +166,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: plugins/${{ needs.build-plugin.outputs.plugin-id }}
-          name: ${{ needs.build-plugin.outputs.plugin-id }}-${{ needs.build-plugin.outputs.plugin-version }}
+          name: ${{ needs.build-plugin.outputs.plugin-id }}-\
+            ${{ needs.build-plugin.outputs.plugin-version }}
 
       - name: see the plugin
         run: ls plugins    
@@ -175,8 +179,9 @@ jobs:
       - name: Build grafana image
         run: |
           docker build \
-           -t  ${{ steps.values.outputs.frontend-image }}:${{ steps.vars.outputs.sha_short }} \
-           -t  ${{ steps.values.outputs.frontend-image }}:latest \
+           -t ${{ steps.values.outputs.frontend-image }}:\
+            ${{ steps.vars.outputs.sha_short }} \
+           -t ${{ steps.values.outputs.frontend-image }}:latest \
           -f- . <<EOF
             FROM ${{ steps.values.outputs.grafana-image }}
             USER grafana
@@ -189,8 +194,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-  
+
       - name: Push Docker image to GHCR
         run: |
           docker push ${{ steps.values.outputs.frontend-image }}:latest
-          docker push ${{ steps.values.outputs.frontend-image }}:${{ steps.vars.outputs.sha_short }}
+          docker push ${{ steps.values.outputs.frontend-image }}:\
+            ${{ steps.vars.outputs.sha_short }}
