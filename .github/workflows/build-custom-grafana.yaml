@@ -123,11 +123,9 @@ jobs:
       - name: Archive Build
         uses: actions/upload-artifact@v4
         with:
-          name: >-
-            "${{ steps.metadata.outputs.plugin-id }}-\
+          name: "${{ steps.metadata.outputs.plugin-id }}-\
             ${{ steps.metadata.outputs.plugin-version }}"
-          path: >-
-            "${{ matrix.WORKING_DIRECTORY }}/
+          path: "${{ matrix.WORKING_DIRECTORY }}/
             ${{ steps.metadata.outputs.plugin-id }}"
           retention-days: 5
 
