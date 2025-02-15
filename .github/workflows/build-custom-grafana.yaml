@@ -170,7 +170,7 @@ jobs:
             ${{ needs.build-plugin.outputs.plugin-version }}
 
       - name: see the plugin
-        run: ls plugins    
+        run: ls plugins
 
       - name: Set outputs
         id: vars
