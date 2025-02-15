@@ -43,7 +43,7 @@ jobs:
             --tag ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }} \
             .
           docker push ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }}
-      
+
       - name: Push to latest in main branch
         if: github.ref == 'refs/heads/main'
         run: |
@@ -80,7 +80,8 @@ jobs:
             ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }} \
             --amend ${{ env.IMAGE }}-arm64:${{ steps.vars.outputs.sha_short }} \
             --amend ${{ env.IMAGE }}-amd64:${{ steps.vars.outputs.sha_short }}
-          docker manifest push ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }}
+          docker manifest push \
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }}
 
       - name: Push to latest in main branch
         if: github.ref == 'refs/heads/main'
