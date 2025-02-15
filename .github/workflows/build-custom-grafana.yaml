@@ -154,7 +154,7 @@ jobs:
           GRAFANA_TAG=$(cat values.yaml | yq '.grafana.tag')
           echo "grafana-image=${GRAFANA_IMAGE}:${GRAFANA_TAG}" >> $GITHUB_OUTPUT
           FRONTEND_IMAGE=$(cat values.yaml | yq '.frontend.image')
-          echo "frontend-image=${FRONTEND_IMAGE}" >> $GITHUB_OUTPUT
+          echo "image=${FRONTEND_IMAGE}" >> $GITHUB_OUTPUT
 
       - name: Create plugins directory
         run: mkdir -p plugins
@@ -171,14 +171,13 @@ jobs:
 
       - name: Set outputs
         id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build grafana image
         run: |
-          docker build \
-           -t ${{ steps.values.outputs.frontend-image }}:\
-            ${{ steps.vars.outputs.sha_short }} \
-           -t ${{ steps.values.outputs.frontend-image }}:latest \
+          docker build -t \
+            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }} \
+           -t ${{ steps.values.outputs.image }}:latest \
           -f- . <<EOF
             FROM ${{ steps.values.outputs.grafana-image }}
             USER grafana
@@ -194,6 +193,6 @@ jobs:
 
       - name: Push Docker image to GHCR
         run: |
-          docker push ${{ steps.values.outputs.frontend-image }}:latest
-          docker push ${{ steps.values.outputs.frontend-image }}:\
-            ${{ steps.vars.outputs.sha_short }}
+          docker push ${{ steps.values.outputs.image }}:latest
+          docker push \
+            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
