@@ -1,6 +1,7 @@
+---
 name: Build image and push to ECR
 
-on:
+on: # yamllint disable-line rule:truthy
   workflow_call:
     inputs:
       context:

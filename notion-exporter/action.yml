@@ -1,7 +1,8 @@
+---
 name: Notion Exporter
 description: |
-  This action exports document data from Notion and create a pull 
-  request with the data in a markdown file. It will check if the 
+  This action exports document data from Notion and create a pull
+  request with the data in a markdown file. It will check if the
   document has been update and create a new PR with the updated
   data.
 inputs:
