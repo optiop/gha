@@ -16,7 +16,9 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          matrix=$(find . -type d -name 'optiop*' | jq -R '{WORKING_DIRECTORY: .}' | jq -s '{include: .}' | tr -d '\n')
+          matrix=$(find . -type d -name 'optiop*' | \
+            jq -R '{WORKING_DIRECTORY: .}' | \
+            jq -s '{include: .}' | tr -d '\n')
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "Generated matrix: $matrix"
 
@@ -42,7 +44,8 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: ${{ matrix.WORKING_DIRECTORY }}/package-lock.json
+          cache-dependency-path: 
+            ${{ matrix.WORKING_DIRECTORY }}/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -110,7 +113,8 @@ jobs:
         id: package-plugin
         run: |
           mv dist ${{ steps.metadata.outputs.plugin-id }}
-          zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
+          zip ${{ steps.metadata.outputs.archive }} \
+            ${{ steps.metadata.outputs.plugin-id }} -r
 
       - name: Archive Build
         uses: actions/upload-artifact@v4
