@@ -56,7 +56,8 @@ jobs:
             ${{ inputs.repo }}:${{ steps.vars.outputs.sha_short }}
             ${{ inputs.repo }}:latest
           secrets: |
-            grafana_access_policy_token=${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+            grafana_access_policy_token=
+              ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
           build-args: |
             BINGO=false
             GO_BUILD_TAGS=
