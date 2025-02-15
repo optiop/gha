@@ -1,0 +1,91 @@
+name: Build and publish Grafana image to ghcr.io
+
+on:
+  workflow_call:
+    inputs:
+      project-name:
+        required: true
+        type: string 
+
+jobs:
+  build-image:
+    permissions: write-all
+    strategy:
+      matrix:
+        runner: 
+          - tag: amd64
+            labels: [ self-hosted, Linux]
+          - tag: arm64
+            labels: [ self-hosted, macOS]
+    runs-on: ${{ matrix.runner.labels }}
+    env:
+      PROJECT_NAME: ${{ inputs.project-name }}
+    timeout-minutes: 80
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set sha for image version
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build Frontend Docker image
+        run: |
+          docker build -f Dockerfile \
+            --tag ghcr.io/optiop/${{ env.PROJECT_NAME }}-${{ matrix.runner.tag }}:${{ steps.vars.outputs.sha_short }} \
+            .
+          docker push ghcr.io/optiop/${{ env.PROJECT_NAME }}-${{ matrix.runner.tag }}:${{ steps.vars.outputs.sha_short }}
+      
+      - name: Push to latest in main branch
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker tag ghcr.io/optiop/${{ env.PROJECT_NAME }}-${{ matrix.runner.tag }}:${{ steps.vars.outputs.sha_short }} \
+            ghcr.io/optiop/${{ env.PROJECT_NAME }}-${{ matrix.runner.tag }}:latest
+          docker push ghcr.io/optiop/${{ env.PROJECT_NAME }}-${{ matrix.runner.tag }}:latest
+
+  multi-archi-image:
+    runs-on: ubuntu-latest
+    needs: build-image
+    env:
+      PROJECT_NAME: ${{ inputs.project-name }}
+    permissions: write-all
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Login to Github Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set outputs
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Set multi-archi image
+      run: |
+        docker manifest create \
+          ghcr.io/optiop/${{ env.PROJECT_NAME }}:${{ steps.vars.outputs.sha_short }} \
+          --amend ghcr.io/optiop/${{ env.PROJECT_NAME }}-arm64:${{ steps.vars.outputs.sha_short }} \
+          --amend ghcr.io/optiop/${{ env.PROJECT_NAME }}-amd64:${{ steps.vars.outputs.sha_short }}
+        docker manifest push ghcr.io/optiop/${{ env.PROJECT_NAME }}:${{ steps.vars.outputs.sha_short }}
+    
+    - name: Push to latest in main branch
+      if: github.ref == 'refs/heads/main'
+      run: |
+        docker manifest create \
+          ghcr.io/optiop/${{ env.PROJECT_NAME }}:latest \
+          --amend ghcr.io/optiop/${{ env.PROJECT_NAME }}-arm64:${{ steps.vars.outputs.sha_short }} \
+          --amend ghcr.io/optiop/${{ env.PROJECT_NAME }}-amd64:${{ steps.vars.outputs.sha_short }}
+        docker manifest push ghcr.io/optiop/${{ env.PROJECT_NAME }}:latest
