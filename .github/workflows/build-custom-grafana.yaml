@@ -6,6 +6,9 @@ on:
       image-name:
         required: true
         type: string 
+      grafana-image:
+        required: true
+        type: string
     secrets:
       grafana-access-policy-token:
         description: 'Grafana access policy token used to sign the plugins'
@@ -159,7 +162,7 @@ jobs:
            -t  ${{ inputs.image-name }}:${{ steps.vars.outputs.sha_short }} \
            -t  ${{ inputs.image-name }}:latest \
           -f- . <<EOF
-            FROM grafana/grafana:latest
+            FROM ${{ inputs.grafana-image }}
             USER grafana
             COPY ./plugins/ /var/lib/grafana/plugins/
           EOF
