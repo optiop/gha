@@ -1,14 +1,8 @@
+---
 name: Build Custom Grafana
 
-on:
+on:  # yamllint disable-line rule:truthy
   workflow_call:
-    inputs:
-      image-name:
-        required: true
-        type: string 
-      grafana-image:
-        required: true
-        type: string
     secrets:
       grafana-access-policy-token:
         description: 'Grafana access policy token used to sign the plugins'
@@ -26,7 +20,9 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          matrix=$(find . -type d -name 'optiop*' | jq -R '{WORKING_DIRECTORY: .}' | jq -s '{include: .}' | tr -d '\n')
+          matrix=$(find . -type d -name 'optiop*' | \
+            jq -R '{WORKING_DIRECTORY: .}' | \
+            jq -s '{include: .}' | tr -d '\n')
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "Generated matrix: $matrix"
 
@@ -52,7 +48,8 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: ${{ matrix.WORKING_DIRECTORY }}/package-lock.json
+          cache-dependency-path:
+            ${{ matrix.WORKING_DIRECTORY }}/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -108,25 +105,28 @@ jobs:
       - name: Get plugin metadata
         id: metadata
         run: |
-          export GRAFANA_PLUGIN_ID=$(cat dist/plugin.json | jq -r .id)
-          export GRAFANA_PLUGIN_VERSION=$(cat dist/plugin.json | jq -r .info.version)
-          export GRAFANA_PLUGIN_ARTIFACT=${GRAFANA_PLUGIN_ID}-${GRAFANA_PLUGIN_VERSION}.zip
+          export PLUGIN_ID=$(cat dist/plugin.json | jq -r .id)
+          export PLUGIN_VERSION=$(cat dist/plugin.json | jq -r .info.version)
+          export PLUGIN_ARTIFACT=${PLUGIN_ID}-${PLUGIN_VERSION}.zip
 
-          echo "plugin-id=${GRAFANA_PLUGIN_ID}" >> $GITHUB_OUTPUT
-          echo "plugin-version=${GRAFANA_PLUGIN_VERSION}" >> $GITHUB_OUTPUT
-          echo "archive=${GRAFANA_PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
+          echo "plugin-id=${PLUGIN_ID}" >> $GITHUB_OUTPUT
+          echo "plugin-version=${PLUGIN_VERSION}" >> $GITHUB_OUTPUT
+          echo "archive=${PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
 
       - name: Package plugin
         id: package-plugin
         run: |
           mv dist ${{ steps.metadata.outputs.plugin-id }}
-          zip ${{ steps.metadata.outputs.archive }} ${{ steps.metadata.outputs.plugin-id }} -r
+          zip ${{ steps.metadata.outputs.archive }} \
+            ${{ steps.metadata.outputs.plugin-id }} -r
 
       - name: Archive Build
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}
-          path: ${{ matrix.WORKING_DIRECTORY }}/${{ steps.metadata.outputs.plugin-id }}
+          name: "${{ steps.metadata.outputs.plugin-id }}-\
+            ${{ steps.metadata.outputs.plugin-version }}"
+          path: "${{ matrix.WORKING_DIRECTORY }}/\
+            ${{ steps.metadata.outputs.plugin-id }}"
           retention-days: 5
 
   build-image:
@@ -140,6 +140,22 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read values.yaml
+        id: values
+        run: |
+          GRAFANA_IMAGE=$(cat values.yaml | yq '.grafana.image')
+          GRAFANA_TAG=$(cat values.yaml | yq '.grafana.tag')
+          echo "grafana-image=${GRAFANA_IMAGE}:${GRAFANA_TAG}" >> $GITHUB_OUTPUT
+          FRONTEND_IMAGE=$(cat values.yaml | yq '.frontend.image')
+          echo "image=${FRONTEND_IMAGE}" >> $GITHUB_OUTPUT
+
       - name: Create plugins directory
         run: mkdir -p plugins
 
@@ -147,22 +163,23 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: plugins/${{ needs.build-plugin.outputs.plugin-id }}
-          name: ${{ needs.build-plugin.outputs.plugin-id }}-${{ needs.build-plugin.outputs.plugin-version }}
+          name: "${{ needs.build-plugin.outputs.plugin-id }}-\
+            ${{ needs.build-plugin.outputs.plugin-version }}"
 
       - name: see the plugin
-        run: ls plugins    
+        run: ls plugins
 
       - name: Set outputs
         id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build grafana image
         run: |
-          docker build \
-           -t  ${{ inputs.image-name }}:${{ steps.vars.outputs.sha_short }} \
-           -t  ${{ inputs.image-name }}:latest \
+          docker build -t \
+            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }} \
+           -t ${{ steps.values.outputs.image }}:latest \
           -f- . <<EOF
-            FROM ${{ inputs.grafana-image }}
+            FROM ${{ steps.values.outputs.grafana-image }}
             USER grafana
             COPY ./plugins/ /var/lib/grafana/plugins/
           EOF
@@ -173,8 +190,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-  
+
       - name: Push Docker image to GHCR
         run: |
-          docker push ${{ inputs.image-name }}:latest
-          docker push ${{ inputs.image-name }}:${{ steps.vars.outputs.sha_short }}
+          docker push ${{ steps.values.outputs.image }}:latest
+          docker push \
+            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}

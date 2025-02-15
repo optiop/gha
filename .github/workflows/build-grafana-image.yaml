@@ -1,0 +1,91 @@
+---
+name: Build and publish Grafana image to ghcr.io
+
+on:  # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      project-name:
+        required: true
+        type: string
+
+jobs:
+  build-image:
+    strategy:
+      matrix:
+        runner:
+          - tag: amd64
+            labels: [self-hosted, Linux]
+          - tag: arm64
+            labels: [self-hosted, macOS]
+    runs-on: ${{ matrix.runner.labels }}
+    env:
+      IMAGE: ghcr.io/optiop/${{ inputs.project-name }}-${{ matrix.runner.tag }}
+    timeout-minutes: 80
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set sha for image version
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build Frontend Docker image
+        run: |
+          docker build -f Dockerfile \
+            --tag ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }} \
+            .
+          docker push ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }}
+
+      - name: Push to latest in main branch
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker tag ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }} \
+            ${{ env.IMAGE}}:latest
+          docker push ${{ env.IMAGE }}:latest
+
+  multi-archi-image:
+    runs-on: ubuntu-latest
+    needs: build-image
+    env:
+      IMAGE: ghcr.io/optiop/${{ inputs.project-name }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set outputs
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set multi-archi image
+        run: |
+          docker manifest create \
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }} \
+            --amend ${{ env.IMAGE }}-arm64:${{ steps.vars.outputs.sha_short }} \
+            --amend ${{ env.IMAGE }}-amd64:${{ steps.vars.outputs.sha_short }}
+          docker manifest push \
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }}
+
+      - name: Push to latest in main branch
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker manifest create \
+            ${{ env.IMAGE }}:latest \
+            --amend ${{ env.IMAGE }}-arm64:${{ steps.vars.outputs.sha_short }} \
+            --amend ${{ env.IMAGE }}-amd64:${{ steps.vars.outputs.sha_short }}
+          docker manifest push ${{ env.IMAGE }}:latest
