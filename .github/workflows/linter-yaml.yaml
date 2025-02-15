@@ -2,7 +2,9 @@
 name: YAML Lint
 
 # yamllint disable
-on: [push]
+on: 
+  push:
+  workflow_call:
 
 jobs:
   yamllint:
