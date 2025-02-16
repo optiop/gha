@@ -7,6 +7,10 @@ on:  # yamllint disable-line rule:truthy
       grafana-access-policy-token:
         description: 'Grafana access policy token used to sign the plugins'
         required: true
+    inputs:
+      project-name:
+        required: true
+        type: string
 
 jobs:
   generate-matrix:
@@ -132,7 +136,16 @@ jobs:
   build-image:
     name: Build docker image
     needs: build-plugin
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runner:
+          - tag: amd64
+            labels: [ubuntu-latest]
+          - tag: arm64
+            labels: [self-hosted, macOS]
+    runs-on: ${{ matrix.runner.labels }}
+    env:
+      IMAGE: ghcr.io/optiop/${{ inputs.project-name }}-${{ matrix.runner.tag }}
     outputs:
       plugin-id: ${{ needs.build-plugin.outputs.plugin-id }}
       plugin-version: ${{ needs.build-plugin.outputs.plugin-version }}
@@ -186,6 +199,23 @@ jobs:
             USER grafana
           EOF
 
+      - name: Push Docker image to GHCR
+        run: |
+          docker push ${{ steps.values.outputs.image }}:latest
+          docker push \
+            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
+
+  multi-archi-image:
+    runs-on: ubuntu-latest
+    needs: build-image
+    env:
+      IMAGE: ghcr.io/optiop/${{ inputs.project-name }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
         with:
@@ -193,8 +223,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Docker image to GHCR
+      - name: Set outputs
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set multi-archi image
         run: |
-          docker push ${{ steps.values.outputs.image }}:latest
-          docker push \
-            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
+          docker manifest create \
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }} \
+            --amend ${{ env.IMAGE }}-arm64:${{ steps.vars.outputs.sha_short }} \
+            --amend ${{ env.IMAGE }}-amd64:${{ steps.vars.outputs.sha_short }}
+          docker manifest push \
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }}
+
+      - name: Push to latest in main branch
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker manifest create \
+            ${{ env.IMAGE }}:latest \
+            --amend ${{ env.IMAGE }}-arm64:${{ steps.vars.outputs.sha_short }} \
+            --amend ${{ env.IMAGE }}-amd64:${{ steps.vars.outputs.sha_short }}
+          docker manifest push ${{ env.IMAGE }}:latest
