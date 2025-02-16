@@ -149,6 +149,7 @@ jobs:
     outputs:
       plugin-id: ${{ needs.build-plugin.outputs.plugin-id }}
       plugin-version: ${{ needs.build-plugin.outputs.plugin-version }}
+      sha: ${{ steps.vars.outputs.sha }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -180,7 +181,7 @@ jobs:
             ${{ needs.build-plugin.outputs.plugin-version }}"
 
       - name: see the plugin
-        run: ls plugins
+        run: ls -ltrh plugins
 
       - name: Set outputs
         id: vars
@@ -189,27 +190,28 @@ jobs:
       - name: Build grafana image
         run: |
           docker build -t \
-            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }} \
-           -t ${{ steps.values.outputs.image }}:latest \
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha }} \
+           -t ${{ env.IMAGE }}:latest \
           -f- . <<EOF
             FROM ${{ steps.values.outputs.grafana-image }}
-            COPY ./plugins/ /var/lib/grafana/plugins/
             USER root
-            RUN chown -R grafana /var/lib/grafana/plugins/
+            COPY ./plugins/ /var/lib/grafana/plugins/
+            RUN chown -R grafana:grafana /var/lib/grafana/plugins/
             USER grafana
           EOF
 
       - name: Push Docker image to GHCR
         run: |
-          docker push ${{ steps.values.outputs.image }}:latest
+          docker push ${{ env.IMAGE }}:latest
           docker push \
-            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha }}
 
   multi-archi-image:
     runs-on: ubuntu-latest
     needs: build-image
     env:
       IMAGE: ghcr.io/optiop/${{ inputs.project-name }}
+      SHA: ${{ needs.build-image.outputs.sha }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -223,24 +225,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set outputs
-        id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
       - name: Set multi-archi image
         run: |
           docker manifest create \
-            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }} \
-            --amend ${{ env.IMAGE }}-arm64:${{ steps.vars.outputs.sha_short }} \
-            --amend ${{ env.IMAGE }}-amd64:${{ steps.vars.outputs.sha_short }}
+            ${{ env.IMAGE }}:${{ env.SHA }} \
+            --amend ${{ env.IMAGE }}-arm64:${{ env.SHA }} \
+            --amend ${{ env.IMAGE }}-amd64:${{ env.SHA }}
           docker manifest push \
-            ${{ env.IMAGE }}:${{ steps.vars.outputs.sha_short }}
+            ${{ env.IMAGE }}:${{ env.SHA }}
 
       - name: Push to latest in main branch
         if: github.ref == 'refs/heads/main'
         run: |
           docker manifest create \
             ${{ env.IMAGE }}:latest \
-            --amend ${{ env.IMAGE }}-arm64:${{ steps.vars.outputs.sha_short }} \
-            --amend ${{ env.IMAGE }}-amd64:${{ steps.vars.outputs.sha_short }}
+            --amend ${{ env.IMAGE }}-arm64:${{ env.SHA }} \
+            --amend ${{ env.IMAGE }}-amd64:${{ env.SHA }}
           docker manifest push ${{ env.IMAGE }}:latest
