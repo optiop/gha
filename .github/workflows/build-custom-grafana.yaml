@@ -181,7 +181,9 @@ jobs:
           -f- . <<EOF
             FROM ${{ steps.values.outputs.grafana-image }}
             COPY ./plugins/ /var/lib/grafana/plugins/
+            USER root
             RUN chown -R grafana /var/lib/grafana/plugins/
+            USER grafana
           EOF
 
       - name: Login to Github Container Registry
