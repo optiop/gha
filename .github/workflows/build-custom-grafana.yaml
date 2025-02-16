@@ -38,7 +38,7 @@ jobs:
           combined_matrix=$(jq -n --argjson include \
               "$matrix" --argjson runner "$runner" \
               '{include: $include.include, runner: $runner.runner}' \
-              tr -d '\n')
+              | tr -d '\n')
           echo "Generated matrix: $combined_matrix"
           echo "matrix=$combined_matrix" >> $GITHUB_OUTPUT
 
