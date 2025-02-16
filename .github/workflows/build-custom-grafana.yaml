@@ -37,10 +37,10 @@ jobs:
           }'
           combined_matrix=$(jq -n --argjson include \
               "$matrix" --argjson runner "$runner" \
-              '{include: $include.include, runner: $runner.runner}')
-          combined_matrix=$(echo "$combined_matrix" | tr -d ' ')
-          echo "matrix=$combined_matrix" >> $GITHUB_OUTPUT
+              '{include: $include.include, runner: $runner.runner}' \
+              tr -d '\n')
           echo "Generated matrix: $combined_matrix"
+          echo "matrix=$combined_matrix" >> $GITHUB_OUTPUT
 
   build-plugin:
     name: Build, lint and unit tests
