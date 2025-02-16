@@ -180,8 +180,8 @@ jobs:
            -t ${{ steps.values.outputs.image }}:latest \
           -f- . <<EOF
             FROM ${{ steps.values.outputs.grafana-image }}
-            USER grafana
             COPY ./plugins/ /var/lib/grafana/plugins/
+            RUN chown -R grafana /var/lib/grafana/plugins/
           EOF
 
       - name: Login to Github Container Registry
