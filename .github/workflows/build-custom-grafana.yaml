@@ -35,7 +35,8 @@ jobs:
               }
             ]
           }'
-          combined_matrix=$(jq -n --argjson include "$matrix" --argjson runner "$runner" \
+          combined_matrix=$(jq -n --argjson include \
+              "$matrix" --argjson runner "$runner" \
               '{include: $include.include, runner: $runner.runner}')
           echo "matrix=$combined_matrix" >> $GITHUB_OUTPUT
           echo "Generated matrix: $combined_matrix"
