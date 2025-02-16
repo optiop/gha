@@ -9,6 +9,7 @@ on:  # yamllint disable-line rule:truthy
         required: true
     inputs:
       project-name:
+        description: 'The name of the project'
         required: true
         type: string
 
