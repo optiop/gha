@@ -7,11 +7,6 @@ on:  # yamllint disable-line rule:truthy
       grafana-access-policy-token:
         description: 'Grafana access policy token used to sign the plugins'
         required: true
-    inputs:
-      project-name:
-        description: 'The name of the project'
-        required: true
-        type: string
 
 jobs:
   generate-matrix:
