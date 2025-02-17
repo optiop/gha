@@ -254,7 +254,7 @@ jobs:
         id: values
         run: |
           FRONTEND_IMAGE=$(cat values.yaml | yq '.frontend.image')
-          echo "image=${FRONTEND_IMAGE" >> $GITHUB_OUTPUT
+          echo "image=${FRONTEND_IMAGE}" >> $GITHUB_OUTPUT
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
