@@ -238,7 +238,7 @@ jobs:
       - name: Push Docker image to GHCR
         run: |
           docker push ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
-      
+
       - name: Push Docker image to GHCR main 
         if: github.ref == 'refs/heads/main'
         run: |
@@ -284,3 +284,4 @@ jobs:
              ${{ steps.values.outputs.image }}-arm64:${{ env.SHA }} \
              ${{ steps.values.outputs.image }}-amd64:${{ env.SHA }}
           docker manifest push ${{ steps.values.outputs.image }}:latest
+
