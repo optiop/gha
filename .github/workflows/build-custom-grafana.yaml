@@ -237,9 +237,12 @@ jobs:
 
       - name: Push Docker image to GHCR
         run: |
+          docker push ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
+      
+      - name: Push Docker image to GHCR main 
+        if: github.ref == 'refs/heads/main'
+        run: |
           docker push ${{ steps.values.outputs.image }}:latest
-          docker push \
-            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
 
   multi-archi-image:
     runs-on: ubuntu-latest
