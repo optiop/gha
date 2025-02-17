@@ -154,20 +154,15 @@ jobs:
           echo "plugin-id=${PLUGIN_ID}" >> $GITHUB_OUTPUT
           echo "plugin-version=${PLUGIN_VERSION}" >> $GITHUB_OUTPUT
           echo "archive=${PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
+      
+      
 
-      - name: Package plugin for amd64
-        id: package-plugin-amd64
+      - name: Package plugin 
+        id: package-plugin
         run: |
-          mv dist ${{ steps.metadata.outputs.plugin-id }}-amd64
-          zip ${{ steps.metadata.outputs.plugin-id }}-amd64.zip \
-            ${{ steps.metadata.outputs.plugin-id }}-amd64 -r
-
-      - name: Package plugin for arm64
-        id: package-plugin-arm64
-        run: |
-          mv dist ${{ steps.metadata.outputs.plugin-id }}-arm64
-          zip ${{ steps.metadata.outputs.plugin-id }}-arm64.zip \
-            ${{ steps.metadata.outputs.plugin-id }}-arm64 -r
+          mv dist ${{ steps.metadata.outputs.plugin-id }}
+          zip ${{ steps.metadata.outputs.plugin-id }} \
+            ${{ steps.metadata.outputs.plugin-id }} -r
 
       - name: Archive Build
         uses: actions/upload-artifact@v4
@@ -215,19 +210,13 @@ jobs:
             >> $GITHUB_OUTPUT
 
       - name: Create plugins directory
-        run: mkdir -p plugins/amd64 plugins/arm64
+        run: mkdir -p plugins
 
-      - name: Download amd64 plugin
+      - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          path: plugins/amd64/${{ needs.build-plugin.outputs.plugin-id }}-amd64
-          name: "${{ needs.build-plugin.outputs.plugin-id }}-amd64"
-
-      - name: Download arm64 plugin
-        uses: actions/download-artifact@v4
-        with:
-          path: plugins/arm64/${{ needs.build-plugin.outputs.plugin-id }}-arm64
-          name: "${{ needs.build-plugin.outputs.plugin-id }}-arm64"
+          path: plugins/${{ needs.build-plugin.outputs.plugin-id }}
+          name: "${{ needs.build-plugin.outputs.plugin-id }}"
 
       - name: see the plugin
         run: ls -ltrh plugins
@@ -244,9 +233,8 @@ jobs:
           -f- . <<EOF
             FROM ${{ steps.values.outputs.grafana-image }}
             USER root
-            COPY ./plugins/amd64/ /var/lib/grafana/plugins/
-            COPY ./plugins/arm64/ /var/lib/grafana/plugins/
-            RUN chown -R grafana /var/lib/grafana/plugins/
+            COPY ./plugins /var/lib/grafana/plugins/
+            RUN chown -R grafana /var/lib/grafana/plugins
             USER grafana
           EOF
 
