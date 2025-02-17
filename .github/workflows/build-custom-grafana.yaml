@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
-    runs-on: ${{ matrix.runner.labels }}
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ matrix.WORKING_DIRECTORY }}
