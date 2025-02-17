@@ -45,9 +45,9 @@ jobs:
   build-plugin:
     name: Build, lint and unit tests
     needs: generate-matrix
-    runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner.labels }}
     defaults:
       run:
         working-directory: ${{ matrix.WORKING_DIRECTORY }}
@@ -129,6 +129,23 @@ jobs:
       - name: Get plugin metadata
         id: metadata
         run: |
+          if [ -d "dist" ]; then
+            echo "dist directory exists"
+            ls -l dist
+          else
+            echo "dist directory does not exist"
+            exit 1
+          fi
+
+          if [ -f "dist/plugin.json" ]; then
+            echo "plugin.json file exists"
+            cat dist/plugin.json
+          else
+            echo "plugin.json file does not exist"
+            exit 1
+          fi
+
+          # Extract metadata from plugin.json
           export PLUGIN_ID=$(cat dist/plugin.json | jq -r .id)
           export PLUGIN_VERSION=$(cat dist/plugin.json | jq -r .info.version)
           export PLUGIN_ARTIFACT=${PLUGIN_ID}-${PLUGIN_VERSION}.zip
@@ -143,7 +160,7 @@ jobs:
           mv dist ${{ steps.metadata.outputs.plugin-id }}-amd64
           zip ${{ steps.metadata.outputs.plugin-id }}-amd64.zip \
             ${{ steps.metadata.outputs.plugin-id }}-amd64 -r
-      
+
       - name: Package plugin for arm64
         id: package-plugin-arm64
         run: |
