@@ -45,10 +45,10 @@ jobs:
   build-plugin:
     name: Build, lint and unit tests
     needs: generate-matrix
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
-    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ matrix.WORKING_DIRECTORY }}
@@ -214,7 +214,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: plugins/${{ needs.build-plugin.outputs.plugin-id }}
-          name: "${{ needs.build-plugin.outputs.plugin-id }}"
+          name: "${{ needs.build-plugin.outputs.plugin-id }}-\
+            ${{ needs.build-plugin.outputs.plugin-version }}"
 
       - name: see the plugin
         run: ls -ltrh plugins
