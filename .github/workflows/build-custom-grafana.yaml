@@ -21,16 +21,29 @@ jobs:
         id: set-matrix
         run: |
           matrix=$(find . -type d -name 'optiop*' | \
-            jq -R '{WORKING_DIRECTORY: .}' | \
-            jq -s '{include: .}' | tr -d '\n')
-          echo "matrix=$matrix" >> $GITHUB_OUTPUT
-          echo "Generated matrix: $matrix"
+              jq -R '{WORKING_DIRECTORY: .}' | \
+              jq -s '{include: .}' | tr -d '\n')
+          runner='{
+            "runner": [
+              {
+                "tag": "amd64",
+                "labels": ["ubuntu-latest"]
+              }
+            ]
+          }'
+          combined_matrix=$(jq -n --argjson include \
+              "$matrix" --argjson runner "$runner" \
+              '{include: $include.include, runner: $runner.runner}' \
+              | tr -d '\n')
+          echo "Generated matrix: $combined_matrix"
+          echo "matrix=$combined_matrix" >> $GITHUB_OUTPUT
 
   build-plugin:
     name: Build, lint and unit tests
     needs: generate-matrix
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     defaults:
       run:
@@ -88,12 +101,20 @@ jobs:
           args: coverage
           workdir: ${{ matrix.WORKING_DIRECTORY }}
 
-      - name: Build backend
+      - name: Build backend for AMD64
         if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: magefile/mage-action@v3
         with:
           version: latest
           args: build:linux
+          workdir: ${{ matrix.WORKING_DIRECTORY }}
+
+      - name: Build backend for ARM64
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: magefile/mage-action@v3
+        with:
+          version: latest
+          args: build:linuxARM64
           workdir: ${{ matrix.WORKING_DIRECTORY }}
 
       - name: Sign plugin
@@ -105,6 +126,23 @@ jobs:
       - name: Get plugin metadata
         id: metadata
         run: |
+          if [ -d "dist" ]; then
+            echo "dist directory exists"
+            ls -l dist
+          else
+            echo "dist directory does not exist"
+            exit 1
+          fi
+
+          if [ -f "dist/plugin.json" ]; then
+            echo "plugin.json file exists"
+            cat dist/plugin.json
+          else
+            echo "plugin.json file does not exist"
+            exit 1
+          fi
+
+          # Extract metadata from plugin.json
           export PLUGIN_ID=$(cat dist/plugin.json | jq -r .id)
           export PLUGIN_VERSION=$(cat dist/plugin.json | jq -r .info.version)
           export PLUGIN_ARTIFACT=${PLUGIN_ID}-${PLUGIN_VERSION}.zip
@@ -132,10 +170,18 @@ jobs:
   build-image:
     name: Build docker image
     needs: build-plugin
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runner:
+          - tag: amd64
+            labels: [ubuntu-latest]
+          - tag: arm64
+            labels: [self-hosted, macOS]
+    runs-on: ${{ matrix.runner.labels }}
     outputs:
       plugin-id: ${{ needs.build-plugin.outputs.plugin-id }}
       plugin-version: ${{ needs.build-plugin.outputs.plugin-version }}
+      sha: ${{ steps.vars.outputs.sha }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -154,7 +200,8 @@ jobs:
           GRAFANA_TAG=$(cat values.yaml | yq '.grafana.tag')
           echo "grafana-image=${GRAFANA_IMAGE}:${GRAFANA_TAG}" >> $GITHUB_OUTPUT
           FRONTEND_IMAGE=$(cat values.yaml | yq '.frontend.image')
-          echo "image=${FRONTEND_IMAGE}" >> $GITHUB_OUTPUT
+          echo "image=${FRONTEND_IMAGE}-${{ matrix.runner.tag }}" \
+            >> $GITHUB_OUTPUT
 
       - name: Create plugins directory
         run: mkdir -p plugins
@@ -167,7 +214,7 @@ jobs:
             ${{ needs.build-plugin.outputs.plugin-version }}"
 
       - name: see the plugin
-        run: ls plugins
+        run: ls -ltrh plugins
 
       - name: Set outputs
         id: vars
@@ -180,9 +227,39 @@ jobs:
            -t ${{ steps.values.outputs.image }}:latest \
           -f- . <<EOF
             FROM ${{ steps.values.outputs.grafana-image }}
+            USER root
+            COPY ./plugins /var/lib/grafana/plugins/
+            RUN chown -R grafana /var/lib/grafana/plugins
+            RUN chmod +x /var/lib/grafana/plugins/optiop-incidentmanagement-app/gpx_incidentmanagement_linux_amd64
+            RUN chmod +x /var/lib/grafana/plugins/optiop-incidentmanagement-app/gpx_incidentmanagement_linux_arm64
             USER grafana
-            COPY ./plugins/ /var/lib/grafana/plugins/
           EOF
+
+      - name: Push Docker image to GHCR
+        run: |
+          docker push ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
+
+      - name: Push Docker image to GHCR main 
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker push ${{ steps.values.outputs.image }}:latest
+
+  multi-archi-image:
+    runs-on: ubuntu-latest
+    needs: build-image
+    env:
+      SHA: ${{ needs.build-image.outputs.sha }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Read values.yaml
+        id: values
+        run: |
+          FRONTEND_IMAGE=$(cat values.yaml | yq '.frontend.image')
+          echo "image=${FRONTEND_IMAGE}" >> $GITHUB_OUTPUT
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
@@ -191,8 +268,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Docker image to GHCR
+      - name: Set multi-archi image
         run: |
-          docker push ${{ steps.values.outputs.image }}:latest
-          docker push \
-            ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
+          docker manifest create \
+            ${{ steps.values.outputs.image }}:${{ env.SHA }} \
+             ${{ steps.values.outputs.image }}-arm64:${{ env.SHA }} \
+             ${{ steps.values.outputs.image }}-amd64:${{ env.SHA }}
+          docker manifest push \
+            ${{ steps.values.outputs.image }}:${{ env.SHA }}
+      - name: Push to latest in main branch
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker manifest create \
+            ${{ steps.values.outputs.image }}:latest \
+             ${{ steps.values.outputs.image }}-arm64:${{ env.SHA }} \
+             ${{ steps.values.outputs.image }}-amd64:${{ env.SHA }}
+          docker manifest push ${{ steps.values.outputs.image }}:latest
+
