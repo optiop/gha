@@ -154,10 +154,10 @@ jobs:
           echo "plugin-id=${PLUGIN_ID}" >> $GITHUB_OUTPUT
           echo "plugin-version=${PLUGIN_VERSION}" >> $GITHUB_OUTPUT
           echo "archive=${PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
-      
-      
 
-      - name: Package plugin 
+
+
+      - name: Package plugin
         id: package-plugin
         run: |
           mv dist ${{ steps.metadata.outputs.plugin-id }}
