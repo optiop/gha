@@ -200,7 +200,7 @@ jobs:
           GRAFANA_TAG=$(cat values.yaml | yq '.grafana.tag')
           echo "grafana-image=${GRAFANA_IMAGE}:${GRAFANA_TAG}" >> $GITHUB_OUTPUT
           FRONTEND_IMAGE=$(cat values.yaml | yq '.frontend.image')
-          echo "image=${FRONTEND_IMAGE}-${{ matrix.runner.tag }}" \
+          echo "image=${FRONTEND_IMAGE}" \
             >> $GITHUB_OUTPUT
 
       - name: Create plugins directory
