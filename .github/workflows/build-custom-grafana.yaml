@@ -104,12 +104,20 @@ jobs:
           args: coverage
           workdir: ${{ matrix.WORKING_DIRECTORY }}
 
-      - name: Build backend
+      - name: Build backend for AMD64
         if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: magefile/mage-action@v3
         with:
           version: latest
           args: build:linux
+          workdir: ${{ matrix.WORKING_DIRECTORY }}
+
+      - name: Build backend for ARM64
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: magefile/mage-action@v3
+        with:
+          version: latest
+          args: build:linuxARM64
           workdir: ${{ matrix.WORKING_DIRECTORY }}
 
       - name: Sign plugin
@@ -129,12 +137,19 @@ jobs:
           echo "plugin-version=${PLUGIN_VERSION}" >> $GITHUB_OUTPUT
           echo "archive=${PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
 
-      - name: Package plugin
-        id: package-plugin
+      - name: Package plugin for amd64
+        id: package-plugin-amd64
         run: |
-          mv dist ${{ steps.metadata.outputs.plugin-id }}
-          zip ${{ steps.metadata.outputs.archive }} \
-            ${{ steps.metadata.outputs.plugin-id }} -r
+          mv dist ${{ steps.metadata.outputs.plugin-id }}-amd64
+          zip ${{ steps.metadata.outputs.plugin-id }}-amd64.zip \
+            ${{ steps.metadata.outputs.plugin-id }}-amd64 -r
+      
+      - name: Package plugin for arm64
+        id: package-plugin-arm64
+        run: |
+          mv dist ${{ steps.metadata.outputs.plugin-id }}-arm64
+          zip ${{ steps.metadata.outputs.plugin-id }}-arm64.zip \
+            ${{ steps.metadata.outputs.plugin-id }}-arm64 -r
 
       - name: Archive Build
         uses: actions/upload-artifact@v4
@@ -182,14 +197,19 @@ jobs:
             >> $GITHUB_OUTPUT
 
       - name: Create plugins directory
-        run: mkdir -p plugins
+        run: mkdir -p plugins/amd64 plugins/arm64
 
-      - name: Download plugin
+      - name: Download amd64 plugin
         uses: actions/download-artifact@v4
         with:
-          path: plugins/${{ needs.build-plugin.outputs.plugin-id }}
-          name: "${{ needs.build-plugin.outputs.plugin-id }}-\
-            ${{ needs.build-plugin.outputs.plugin-version }}"
+          path: plugins/amd64/${{ needs.build-plugin.outputs.plugin-id }}-amd64
+          name: "${{ needs.build-plugin.outputs.plugin-id }}-amd64"
+
+      - name: Download arm64 plugin
+        uses: actions/download-artifact@v4
+        with:
+          path: plugins/arm64/${{ needs.build-plugin.outputs.plugin-id }}-arm64
+          name: "${{ needs.build-plugin.outputs.plugin-id }}-arm64"
 
       - name: see the plugin
         run: ls -ltrh plugins
@@ -206,7 +226,8 @@ jobs:
           -f- . <<EOF
             FROM ${{ steps.values.outputs.grafana-image }}
             USER root
-            COPY ./plugins/ /var/lib/grafana/plugins/
+            COPY ./plugins/amd64/ /var/lib/grafana/plugins/
+            COPY ./plugins/arm64/ /var/lib/grafana/plugins/
             RUN chown -R grafana /var/lib/grafana/plugins/
             USER grafana
           EOF
