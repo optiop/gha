@@ -161,7 +161,7 @@ jobs:
         id: package-plugin
         run: |
           mv dist ${{ steps.metadata.outputs.plugin-id }}
-          zip ${{ steps.metadata.outputs.plugin-id }} \
+          zip ${{ steps.metadata.outputs.archive }} \
             ${{ steps.metadata.outputs.plugin-id }} -r
 
       - name: Archive Build
