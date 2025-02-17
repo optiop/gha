@@ -28,10 +28,6 @@ jobs:
               {
                 "tag": "amd64",
                 "labels": ["ubuntu-latest"]
-              },
-              {
-                "tag": "arm64",
-                "labels": ["self-hosted", "macOS"]
               }
             ]
           }'
