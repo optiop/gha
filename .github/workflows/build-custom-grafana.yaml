@@ -229,6 +229,7 @@ jobs:
             FROM ${{ steps.values.outputs.grafana-image }}
             USER root
             COPY ./plugins /var/lib/grafana/plugins/
+            RUN chmod +x /var/lib/grafana/plugins/* -R
             RUN chown -R grafana /var/lib/grafana/plugins
             USER grafana
           EOF
