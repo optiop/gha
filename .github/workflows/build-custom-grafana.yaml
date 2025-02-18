@@ -219,9 +219,11 @@ jobs:
       - name: Set outputs
         id: vars
         run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Checkout
-        uses: actions/checkout@v4
+      
+      - name: where am I
+        run: | 
+          pwd
+          ls -ltrh
 
       - name: Build grafana image
         run: |
