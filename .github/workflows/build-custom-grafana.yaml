@@ -124,7 +124,9 @@ jobs:
           echo "root-url=${ROOT_URL}" >> $GITHUB_OUTPUT
 
       - name: Sign plugin
-        run: ROOT_URL=${{ steps.values.outputs.root-url }} npm run sign
+        run: npm run sign
+        env:
+          ROOT_URL: ${{ steps.values.outputs.root-url }}
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
       # required jq to parse plugin.json
