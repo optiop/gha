@@ -117,8 +117,14 @@ jobs:
           args: build:linuxARM64
           workdir: ${{ matrix.WORKING_DIRECTORY }}
 
+      - name: Read values.yaml
+        id: values
+        run: |
+          ROOT_URL=$(cat values.yaml | yq '.grafana.rootURL')
+          echo "root-url=${ROOT_URL}" >> $GITHUB_OUTPUT
+
       - name: Sign plugin
-        run: ROOT_URLS=http://localhost:3000 npm run sign
+        run: ROOT_URL=${{ steps.values.outputs.root-url }} npm run sign
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
       # required jq to parse plugin.json
