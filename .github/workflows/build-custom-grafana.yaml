@@ -231,6 +231,9 @@ jobs:
             COPY ./plugins /var/lib/grafana/plugins/
             RUN chown -R grafana /var/lib/grafana/plugins
             RUN find /var/lib/grafana/plugins/ -type f -name 'gpx*' -exec chmod +x {} \;
+            RUN if [ -d "/var/lib/grafana/plugins/grafana-data" ]; then \
+              mv /var/lib/grafana/plugins/grafana-data/* /etc/grafana/; \
+            fi
             USER grafana
           EOF
 
