@@ -123,7 +123,7 @@ jobs:
 
       - name: Move grafana data to plugin
         run: |
-          mv ${{ matrix.WORKING_DIRECTORY }}/grafana-data ${{ matrix.WORKING_DIRECTORY }}/dist/
+          mv frontend/optiop-poweredstorage-app/grafana-data frontend/optiop-poweredstorage-app/dist/
             fi
 
       # required jq to parse plugin.json
