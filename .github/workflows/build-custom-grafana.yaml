@@ -43,6 +43,7 @@ jobs:
         run: |
           ROOT_URL=$(cat values.yaml | yq '.grafana.rootURL')
           echo "root-url=${ROOT_URL}" >> $GITHUB_OUTPUT
+          echo $ROOT_URL
 
   build-plugin:
     name: Build, lint and unit tests
@@ -60,7 +61,7 @@ jobs:
       has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.grafana-access-policy-token }}
-      ROOT_URLS: ${{ matrix.values.outputs.root-url }}
+      ROOT_URLS: ${{ matrix.outputs.root-url }}
     steps:
       - uses: actions/checkout@v4
 
