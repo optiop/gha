@@ -230,8 +230,7 @@ jobs:
             USER root
             COPY ./plugins /var/lib/grafana/plugins/
             RUN chown -R grafana /var/lib/grafana/plugins
-            RUN chmod +x /var/lib/grafana/plugins/optiop-incidentmanagement-app/gpx_incidentmanagement_linux_amd64
-            RUN chmod +x /var/lib/grafana/plugins/optiop-incidentmanagement-app/gpx_incidentmanagement_linux_arm64
+            RUN find /var/lib/grafana/plugins/ -type f -name 'gpx*' -exec chmod +x {} \;
             USER grafana
           EOF
 
