@@ -123,8 +123,7 @@ jobs:
 
       - name: Move grafana data to plugin
         run: |
-          if [ -d "${{ matrix.WORKING_DIRECTORY }}/grafana-data" ]; then
-          cp -r ${{ matrix.WORKING_DIRECTORY }}/grafana-data ${{ matrix.WORKING_DIRECTORY }}/dist/
+          mv ${{ matrix.WORKING_DIRECTORY }}/grafana-data ${{ matrix.WORKING_DIRECTORY }}/dist/
             fi
 
       # required jq to parse plugin.json
