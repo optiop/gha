@@ -121,10 +121,6 @@ jobs:
         run: ROOT_URLS=http://localhost:3000 npm run sign
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
-      - name: Move grafana data to plugin
-        run: |
-          cp -r ../config dist/
-
       # required jq to parse plugin.json
       # sudo apt install jq
       - name: Get plugin metadata
@@ -224,6 +220,9 @@ jobs:
         id: vars
         run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Build grafana image
         run: |
           docker build -t \
@@ -235,9 +234,8 @@ jobs:
             COPY ./plugins /var/lib/grafana/plugins/
             RUN chown -R grafana /var/lib/grafana/plugins
             RUN find /var/lib/grafana/plugins/ -type f -name 'gpx*' -exec chmod +x {} \;
-            RUN if [ -d "/var/lib/grafana/plugins/grafana-data" ]; then \
-              mv /var/lib/grafana/plugins/grafana-data/* /etc/grafana/; \
-            fi
+            COPY src/grafana/config/grafana.ini /etc/grafana/grafana.ini
+            COPY src/grafana/config/provisioning /etc/grafana/provisioning
             USER grafana
           EOF
 
