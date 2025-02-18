@@ -115,7 +115,7 @@ jobs:
         with:
           version: latest
           args: build:linuxARM64
-          
+          workdir: ${{ matrix.WORKING_DIRECTORY }}
 
       - name: Sign plugin
         run: ROOT_URLS=http://localhost:3000 npm run sign
