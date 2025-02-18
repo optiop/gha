@@ -126,7 +126,7 @@ jobs:
       - name: Sign plugin
         run: npm run sign
         env:
-          ROOT_URLS: ${{ steps.values.outputs['root-url'] }}
+          ROOT_URLS: ${{ steps.values.outputs.root-url }}
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
       # required jq to parse plugin.json
