@@ -56,6 +56,13 @@ jobs:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.grafana-access-policy-token }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Read values.yaml
+        id: values
+        run: |
+          ROOT_URL=$(cat values.yaml | yq '.grafana.rootURL')
+          echo "root-url=${ROOT_URL}" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
@@ -116,12 +123,6 @@ jobs:
           version: latest
           args: build:linuxARM64
           workdir: ${{ matrix.WORKING_DIRECTORY }}
-
-      - name: Read values.yaml
-        id: values
-        run: |
-          ROOT_URL=$(cat values.yaml | yq '.grafana.rootURL')
-          echo "root-url=${ROOT_URL}" >> $GITHUB_OUTPUT
 
       - name: Sign plugin
         run: npm run sign
