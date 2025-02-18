@@ -38,6 +38,12 @@ jobs:
           echo "Generated matrix: $combined_matrix"
           echo "matrix=$combined_matrix" >> $GITHUB_OUTPUT
 
+      - name: Read values.yaml
+        id: values
+        run: |
+          ROOT_URL=$(cat values.yaml | yq '.grafana.rootURL')
+          echo "root-url=${ROOT_URL}" >> $GITHUB_OUTPUT
+
   build-plugin:
     name: Build, lint and unit tests
     needs: generate-matrix
@@ -54,19 +60,12 @@ jobs:
       has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.grafana-access-policy-token }}
+      ROOT_URLS: ${{ matrix.values.outputs.root-url }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: where am I
-        run: | 
-          pwd
-          ls -ltrh
-
-      - name: Read values.yaml
-        id: values
-        run: |
-          ROOT_URL=$(cat values.yaml | yq '.grafana.rootURL')
-          echo "root-url=${ROOT_URL}" >> $GITHUB_OUTPUT
+      - name: check root
+        run: echo $ROOT_URLS
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
