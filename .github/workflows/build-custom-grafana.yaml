@@ -123,8 +123,7 @@ jobs:
 
       - name: Move grafana data to plugin
         run: |
-          mv frontend/optiop-poweredstorage-app/grafana-data frontend/optiop-poweredstorage-app/dist/
-            fi
+          cp -r ../config dist/
 
       # required jq to parse plugin.json
       # sudo apt install jq
