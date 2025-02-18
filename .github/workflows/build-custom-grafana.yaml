@@ -57,6 +57,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: where am I
+        run: | 
+          pwd
+          ls -ltrh
+
       - name: Read values.yaml
         id: values
         run: |
