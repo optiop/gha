@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      root-url: ${{ steps.values.outputs.root-url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,6 +39,13 @@ jobs:
           echo "Generated matrix: $combined_matrix"
           echo "matrix=$combined_matrix" >> $GITHUB_OUTPUT
 
+      - name: Read values.yaml
+        id: values
+        run: |
+          ROOT_URL=$(cat values.yaml | yq '.grafana.rootURL')
+          echo "root-url=${ROOT_URL}" >> $GITHUB_OUTPUT
+          echo $ROOT_URL
+
   build-plugin:
     name: Build, lint and unit tests
     needs: generate-matrix
@@ -54,8 +62,13 @@ jobs:
       has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.grafana-access-policy-token }}
+      ROOT_URLS: ${{ needs.generate-matrix.outputs.root-url }}  
     steps:
       - uses: actions/checkout@v4
+
+      - name: check root
+        run: echo $ROOT_URLS
+
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
@@ -118,7 +131,9 @@ jobs:
           workdir: ${{ matrix.WORKING_DIRECTORY }}
 
       - name: Sign plugin
-        run: ROOT_URLS=http://localhost:3000 npm run sign
+        run: npm run sign
+        env:
+          ROOT_URLS: ${{ needs.generate-matrix.outputs.root-url }}
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
       # required jq to parse plugin.json
@@ -219,6 +234,11 @@ jobs:
       - name: Set outputs
         id: vars
         run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      
+      - name: where am I
+        run: | 
+          pwd
+          ls -ltrh
 
       - name: Build grafana image
         run: |
@@ -231,6 +251,8 @@ jobs:
             COPY ./plugins /var/lib/grafana/plugins/
             RUN chown -R grafana /var/lib/grafana/plugins
             RUN find /var/lib/grafana/plugins/ -type f -name 'gpx*' -exec chmod +x {} \;
+            COPY src/grafana/config/grafana.ini /etc/grafana/grafana.ini
+            COPY src/grafana/config/provisioning /etc/grafana/provisioning
             USER grafana
           EOF
 
