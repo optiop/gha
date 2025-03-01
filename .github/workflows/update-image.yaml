@@ -1,0 +1,92 @@
+name: Deploy Latest Grafana to production
+
+on:
+  workflow_call:
+    inputs:
+      grafana-access-policy-token:
+        description: 'Grafana access policy token used to sign the plugins'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Get Grafana Image from values.yaml
+        id: get_image
+        run: |
+          IMAGE_NAME=$(yq eval '.production.grafana.image' values.yaml)
+          IMAGE_TAG=$(yq eval '.production.grafana.tag' values.yaml)
+          DOCKER_COMPOSE_FILE=$(yq eval '.production.server.docker-compose-file' values.yaml)
+
+          SSH_HOST_PROD=$(yq eval '.production.server.ssh-host' values.yaml)
+          SSH_USERNAME_PROD=$(yq eval '.production.server.ssh-username' values.yaml)
+          DEPLOY_PATH_PROD=$(yq eval '.production.server.deploy-directory' values.yaml)
+
+          SSH_HOST_DEV=$(yq eval '.development.server.ssh-host' values.yaml)
+          SSH_USERNAME_DEV=$(yq eval '.development.server.ssh-username' values.yaml)
+          DEPLOY_PATH_DEV=$(yq eval '.development.server.deploy-directory' values.yaml)
+
+          echo "::set-output name=image_name::$IMAGE_NAME"
+          echo "::set-output name=image_tag::$IMAGE_TAG"
+          echo "::set-output name=docker_compose_file::$DOCKER_COMPOSE_FILE"
+
+          echo "::set-output name=ssh_host::$SSH_HOST_PROD"
+          echo "::set-output name=ssh_username::$SSH_USERNAME_PROD"
+          echo "::set-output name=deploy_path::$DEPLOY_PATH_PROD"
+
+          echo "::set-output name=ssh_host_dev::$SSH_HOST_DEV"
+          echo "::set-output name=ssh_username_dev::$SSH_USERNAME_DEV"
+          echo "::set-output name=deploy_path_dev::$DEPLOY_PATH_DEV"
+
+      - name: Check if Production Deployment is Required
+        id: check_prod_deploy
+        run: |
+          UPDATE_PROD_IMAGE=${{ secrets.update-prod-image }}
+          echo "::set-output name=update_prod_image::$UPDATE_PROD_IMAGE"
+
+      - name: Deploy to Production
+        if: ${{ steps.check_prod_deploy.outputs.update_prod_image }} == 'true'
+        run: |
+          IMAGE_NAME=${{ steps.get_image.outputs.image_name }}
+          IMAGE_TAG=${{ steps.get_image.outputs.image_tag }}
+          SSH_HOST=${{ steps.get_image.outputs.ssh_host }}
+          SSH_USERNAME=${{ steps.get_image.outputs.ssh_username }}
+          DEPLOY_PATH=${{ steps.get_image.outputs.deploy_path }}
+          DOCKER_COMPOSE_FILE=${{ steps.get_image.outputs.docker_compose_file }}
+
+          ssh -o StrictHostKeyChecking=no admin@$SSH_HOST << EOF
+
+          export IMAGE_NAME=$IMAGE_NAME
+          export IMAGE_TAG=$IMAGE_TAG
+          export DEPLOY_PATH=$DEPLOY_PATH
+          export DOCKER_COMPOSE_FILE=$DOCKER_COMPOSE_FILE
+
+          cd $DEPLOY_PATH
+          sudo sed -i "/grafana:/,/image:/s|image: .*xx|image: \${IMAGE_NAME}:\${IMAGE_TAG}|" $DOCKER_COMPOSE_FILE
+          sudo docker-compose down
+          sudo docker-compose up -d
+          EOF
+
+      - name: Deploy to Development
+        run: |
+          SSH_HOST=${{ steps.get_image.outputs.ssh_host_dev }}
+          SSH_USERNAME=${{ steps.get_image.outputs.ssh_username_dev }}
+          DEPLOY_PATH=${{ steps.get_image.outputs.deploy_path_dev }}
+          
+          ssh -o StrictHostKeyChecking=no admin@$SSH_HOST << EOF
+
+          export DEPLOY_PATH=$DEPLOY_PATH
+
+          cd $DEPLOY_PATH
+          sudo docker-compose down
+          sudo docker-compose up -d
+          EOF
