@@ -79,7 +79,8 @@ jobs:
           SSH_HOST=${{ steps.get_values.outputs.prod_ssh_host }}
           SSH_USERNAME=${{ steps.get_values.outputs.prod_ssh_username }}
           DEPLOY_PATH=${{ steps.get_values.outputs.prod_deploy_path }}
-          DOCKER_COMPOSE_FILE=${{ steps.get_values.outputs.docker_compose_file }}
+          DOCKER_COMPOSE_FILE= \
+            ${{ steps.get_values.outputs.docker_compose_file }}
 
           ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
           export IMAGE_NAME=$IMAGE_NAME
