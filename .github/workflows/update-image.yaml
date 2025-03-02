@@ -83,14 +83,14 @@ jobs:
             ${{ steps.get_values.outputs.docker_compose_file }}
 
           ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
-          export IMAGE_NAME=$IMAGE_NAME
-          export IMAGE_TAG=$IMAGE_TAG
+          export IMG_NAME=$IMAGE_NAME
+          export IMG_TAG=$IMAGE_TAG
           export DEPLOY_PATH=$DEPLOY_PATH
           export DOCKER_COMPOSE_FILE=$DOCKER_COMPOSE_FILE
 
           cd $DEPLOY_PATH
           sudo sed -i \
-            "/grafana:/,/image:/s|image: .*xx|image: \${IMAGE_NAME}:\${IMAGE_TAG}|" \
+            "/grafana:/,/image:/s|image: .*xx|image: \${IMG_NAME}:\${IMG_TAG}|" \
             $DOCKER_COMPOSE_FILE
           sudo docker-compose down
           sudo docker-compose up -d
