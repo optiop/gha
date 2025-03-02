@@ -22,7 +22,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.ssh-private-key }}
 
-
       - name: Get values from values.yaml
         id: get_values
         run: |
@@ -38,6 +37,7 @@ jobs:
           SSH_USERNAME_DEV=$(yq eval '.development.server.ssh-username' values.yaml)
           DEPLOY_PATH_DEV=$(yq eval '.development.server.deploy-directory' values.yaml)
 
+          # Set output for later steps
           echo "::set-output name=image_name::$IMAGE_NAME"
           echo "::set-output name=image_tag::$IMAGE_TAG"
           echo "::set-output name=docker_compose_file::$DOCKER_COMPOSE_FILE"
@@ -45,7 +45,7 @@ jobs:
           echo "::set-output name=prod_ssh_host::$SSH_HOST_PROD"
           echo "::set-output name=prod_ssh_username::$SSH_USERNAME_PROD"
           echo "::set-output name=prod_deploy_path::$DEPLOY_PATH_PROD"
-
+          
           echo "::set-output name=dev_ssh_host::$SSH_HOST_DEV"
           echo "::set-output name=dev_ssh_username::$SSH_USERNAME_DEV"
           echo "::set-output name=dev_deploy_path::$DEPLOY_PATH_DEV"
