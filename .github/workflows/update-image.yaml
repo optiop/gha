@@ -37,18 +37,17 @@ jobs:
           SSH_USERNAME_DEV=$(yq eval '.development.server.ssh-username' values.yaml)
           DEPLOY_PATH_DEV=$(yq eval '.development.server.deploy-directory' values.yaml)
 
-          # Set output for later steps
-          echo "::set-output name=image_name::$IMAGE_NAME"
-          echo "::set-output name=image_tag::$IMAGE_TAG"
-          echo "::set-output name=docker_compose_file::$DOCKER_COMPOSE_FILE"
+          echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "docker_compose_file=$DOCKER_COMPOSE_FILE" >> $GITHUB_OUTPUT
 
-          echo "::set-output name=prod_ssh_host::$SSH_HOST_PROD"
-          echo "::set-output name=prod_ssh_username::$SSH_USERNAME_PROD"
-          echo "::set-output name=prod_deploy_path::$DEPLOY_PATH_PROD"
+          echo "prod_ssh_host=$SSH_HOST_PROD" >> $GITHUB_OUTPUT
+          echo "prod_ssh_username=$SSH_USERNAME_PROD" >> $GITHUB_OUTPUT
+          echo "prod_deploy_path=$DEPLOY_PATH_PROD" >> $GITHUB_OUTPUT
           
-          echo "::set-output name=dev_ssh_host::$SSH_HOST_DEV"
-          echo "::set-output name=dev_ssh_username::$SSH_USERNAME_DEV"
-          echo "::set-output name=dev_deploy_path::$DEPLOY_PATH_DEV"
+          echo "dev_ssh_host=$SSH_HOST_DEV" >> $GITHUB_OUTPUT
+          echo "dev_ssh_username=$SSH_USERNAME_DEV" >> $GITHUB_OUTPUT
+          echo "dev_deploy_path=$DEPLOY_PATH_DEV" >> $GITHUB_OUTPUT
 
       - name: Deploy to Development
         run: |
@@ -63,17 +62,21 @@ jobs:
           sudo docker-compose down
           sudo docker-compose up -d
           EOF
+      
+      - name: check production version
+        id: check_prod_version
+        run: |
+          PROD_IMAGE_TAG=$(yq eval '.production.grafana.tag' values.yaml)
+          PREV_PROD_IMAGE_TAG=$(git diff HEAD -- values.yaml | grep "^+.*tag:" | sed 's/.*tag: \(.*\)/\1/' | grep -v latest)
+          echo "Previous Prod Image Tag: $PREV_PROD_IMAGE_TAG"
+          echo "Current Prod Image Tag: $PROD_IMAGE_TAG"
+          echo "prod_image_tag=$PROD_IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "prev_prod_image_tag=$PREV_PROD_IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Check production image tag and deploy if changed
         id: check_prod_update
         run: |
-          PROD_IMAGE_TAG=$(yq eval '.production.grafana.tag' values.yaml)
-          PREV_PROD_IMAGE_TAG=$(git diff HEAD -- values.yaml | grep "^+.*tag:" | sed 's/.*tag: \(.*\)/\1/' | grep -v latest)
-          
-          echo "Previous Prod Image Tag: $PREV_PROD_IMAGE_TAG"
-          echo "Current Prod Image Tag: $PROD_IMAGE_TAG"
-
-          if [ "$PROD_IMAGE_TAG" != "$PREV_PROD_IMAGE_TAG" ]; then
+          if [ ${{ steps.check_prod_version.outputs.prod_image_tag }} != ${{ steps.check_prod_version.outputs.PREV_PROD_IMAGE_TAG }} ]; then
             echo "Image tag updated, deploying to production..."
 
             IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
