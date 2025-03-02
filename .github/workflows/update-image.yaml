@@ -1,3 +1,4 @@
+---
 name: Deploy Latest Grafana to production
 
 on:
@@ -46,7 +47,7 @@ jobs:
           echo "prod_ssh_username=$SSH_USERNAME_PROD" >> $GITHUB_OUTPUT
           echo "prod_deploy_path=$DEPLOY_PATH_PROD" >> $GITHUB_OUTPUT
           echo "deploy_prod=$DEPLOY_PROD" >> $GITHUB_OUTPUT
-          
+
           echo "dev_ssh_host=$SSH_HOST_DEV" >> $GITHUB_OUTPUT
           echo "dev_ssh_username=$SSH_USERNAME_DEV" >> $GITHUB_OUTPUT
           echo "dev_deploy_path=$DEPLOY_PATH_DEV" >> $GITHUB_OUTPUT
