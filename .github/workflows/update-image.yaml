@@ -65,7 +65,7 @@ jobs:
           sudo docker-compose up -d
           EOF
 
-      - name: Check production image tag and deploy if changed
+      - name: Update production image and deploy
         if: ${{ steps.get_values.outputs.deploy_prod == 'true' }}
         run: |
           IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
