@@ -67,7 +67,6 @@ jobs:
       - name: Check production image tag and deploy if changed
         id: check_prod_update
         run: |
-          git fetch --depth=2
           PROD_IMAGE_TAG=$(yq eval '.production.grafana.tag' values.yaml)
           PREV_PROD_IMAGE_TAG=$(git diff HEAD -- values.yaml | grep "^+.*tag:" | sed 's/.*tag: \(.*\)/\1/' | grep -v latest)
           
