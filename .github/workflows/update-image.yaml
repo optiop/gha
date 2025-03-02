@@ -69,7 +69,7 @@ jobs:
         run: |
           git fetch --depth=2
           PROD_IMAGE_TAG=$(yq eval '.production.grafana.tag' values.yaml)
-          PREV_PROD_IMAGE_TAG=$(git diff HEAD~1 -- values.yaml | grep "production.grafana.tag" | awk '{print $2}')
+          PREV_PROD_IMAGE_TAG=$(git diff HEAD -- values.yaml | grep "^+.*tag:" | sed 's/.*tag: \(.*\)/\1/' | grep -v latest)
           
           echo "Previous Prod Image Tag: $PREV_PROD_IMAGE_TAG"
           echo "Current Prod Image Tag: $PROD_IMAGE_TAG"
