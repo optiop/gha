@@ -32,6 +32,7 @@ jobs:
           SSH_HOST_PROD=$(yq eval '.production.server.ssh-host' values.yaml)
           SSH_USERNAME_PROD=$(yq eval '.production.server.ssh-username' values.yaml)
           DEPLOY_PATH_PROD=$(yq eval '.production.server.deploy-directory' values.yaml)
+          DEPLOY_PROD=$(yq eval '.deploy_production' values.yaml)
 
           SSH_HOST_DEV=$(yq eval '.development.server.ssh-host' values.yaml)
           SSH_USERNAME_DEV=$(yq eval '.development.server.ssh-username' values.yaml)
@@ -44,6 +45,7 @@ jobs:
           echo "prod_ssh_host=$SSH_HOST_PROD" >> $GITHUB_OUTPUT
           echo "prod_ssh_username=$SSH_USERNAME_PROD" >> $GITHUB_OUTPUT
           echo "prod_deploy_path=$DEPLOY_PATH_PROD" >> $GITHUB_OUTPUT
+          echo "deploy_prod=$DEPLOY_PROD" >> $GITHUB_OUTPUT
           
           echo "dev_ssh_host=$SSH_HOST_DEV" >> $GITHUB_OUTPUT
           echo "dev_ssh_username=$SSH_USERNAME_DEV" >> $GITHUB_OUTPUT
@@ -62,41 +64,25 @@ jobs:
           sudo docker-compose down
           sudo docker-compose up -d
           EOF
-      
-      - name: check production version
-        id: check_prod_version
-        run: |
-          PROD_IMAGE_TAG=$(yq eval '.production.grafana.tag' values.yaml)
-          PREV_PROD_IMAGE_TAG=$(git diff HEAD -- values.yaml | grep "^+.*tag:" | sed 's/.*tag: \(.*\)/\1/' | grep -v latest)
-          echo "Previous Prod Image Tag: $PREV_PROD_IMAGE_TAG"
-          echo "Current Prod Image Tag: $PROD_IMAGE_TAG"
-          echo "prod_image_tag=$PROD_IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "prev_prod_image_tag=$PREV_PROD_IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Check production image tag and deploy if changed
-        id: check_prod_update
+        if: ${{ steps.get_values.outputs.deploy_prod == 'true' }}
         run: |
-          if [ ${{ steps.check_prod_version.outputs.prod_image_tag }} != ${{ steps.check_prod_version.outputs.PREV_PROD_IMAGE_TAG }} ]; then
-            echo "Image tag updated, deploying to production..."
+          IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
+          IMAGE_TAG=${{ steps.get_values.outputs.image_tag }}
+          SSH_HOST=${{ steps.get_values.outputs.prod_ssh_host }}
+          SSH_USERNAME=${{ steps.get_values.outputs.prod_ssh_username }}
+          DEPLOY_PATH=${{ steps.get_values.outputs.prod_deploy_path }}
+          DOCKER_COMPOSE_FILE=${{ steps.get_values.outputs.docker_compose_file }}
 
-            IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
-            IMAGE_TAG=${{ steps.get_values.outputs.image_tag }}
-            SSH_HOST=${{ steps.get_values.outputs.prod_ssh_host }}
-            SSH_USERNAME=${{ steps.get_values.outputs.prod_ssh_username }}
-            DEPLOY_PATH=${{ steps.get_values.outputs.prod_deploy_path }}
-            DOCKER_COMPOSE_FILE=${{ steps.get_values.outputs.docker_compose_file }}
- 
-            ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
-            export IMAGE_NAME=$IMAGE_NAME
-            export IMAGE_TAG=$IMAGE_TAG
-            export DEPLOY_PATH=$DEPLOY_PATH
-            export DOCKER_COMPOSE_FILE=$DOCKER_COMPOSE_FILE
+          ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
+          export IMAGE_NAME=$IMAGE_NAME
+          export IMAGE_TAG=$IMAGE_TAG
+          export DEPLOY_PATH=$DEPLOY_PATH
+          export DOCKER_COMPOSE_FILE=$DOCKER_COMPOSE_FILE
 
-            cd $DEPLOY_PATH
-            sudo sed -i "/grafana:/,/image:/s|image: .*xx|image: \${IMAGE_NAME}:\${IMAGE_TAG}|" $DOCKER_COMPOSE_FILE
-            sudo docker-compose down
-            sudo docker-compose up -d
-            EOF
-          else
-            echo "No update in image tag for production, skipping deployment."
-          fi
+          cd $DEPLOY_PATH
+          sudo sed -i "/grafana:/,/image:/s|image: .*xx|image: \${IMAGE_NAME}:\${IMAGE_TAG}|" $DOCKER_COMPOSE_FILE
+          sudo docker-compose down
+          sudo docker-compose up -d
+          EOF
