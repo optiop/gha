@@ -1,12 +1,15 @@
+---
 name: Deploy Latest Grafana to production
 
 on:
   workflow_call:
-    inputs:
+    secrets:
       grafana-access-policy-token:
         description: 'Grafana access policy token used to sign the plugins'
         required: true
-        type: string
+      ssh-private-key:
+        description: 'SSH private key to connect to the server'
+        required: true
 
 jobs:
   deploy:
