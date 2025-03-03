@@ -62,7 +62,7 @@ jobs:
       has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.grafana-access-policy-token }}
-      ROOT_URLS: ${{ needs.generate-matrix.outputs.root-url }}  
+      ROOT_URLS: ${{ needs.generate-matrix.outputs.root-url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -234,9 +234,9 @@ jobs:
       - name: Set outputs
         id: vars
         run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-      
+
       - name: where am I
-        run: | 
+        run: |
           pwd
           ls -ltrh
 
@@ -260,7 +260,7 @@ jobs:
         run: |
           docker push ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
 
-      - name: Push Docker image to GHCR main 
+      - name: Push Docker image to GHCR main
         if: github.ref == 'refs/heads/main'
         run: |
           docker push ${{ steps.values.outputs.image }}:latest
@@ -305,4 +305,3 @@ jobs:
              ${{ steps.values.outputs.image }}-arm64:${{ env.SHA }} \
              ${{ steps.values.outputs.image }}-amd64:${{ env.SHA }}
           docker manifest push ${{ steps.values.outputs.image }}:latest
-
