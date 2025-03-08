@@ -62,7 +62,7 @@ jobs:
       has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.grafana-access-policy-token }}
-      ROOT_URLS: ${{ needs.generate-matrix.outputs.root-url }}  
+      ROOT_URLS: ${{ needs.generate-matrix.outputs.root-url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -190,8 +190,6 @@ jobs:
         runner:
           - tag: amd64
             labels: [ubuntu-latest]
-          - tag: arm64
-            labels: [self-hosted, macOS]
     runs-on: ${{ matrix.runner.labels }}
     outputs:
       plugin-id: ${{ needs.build-plugin.outputs.plugin-id }}
@@ -234,9 +232,9 @@ jobs:
       - name: Set outputs
         id: vars
         run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-      
+
       - name: where am I
-        run: | 
+        run: |
           pwd
           ls -ltrh
 
@@ -260,49 +258,7 @@ jobs:
         run: |
           docker push ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
 
-      - name: Push Docker image to GHCR main 
+      - name: Push Docker image to GHCR main
         if: github.ref == 'refs/heads/main'
         run: |
           docker push ${{ steps.values.outputs.image }}:latest
-
-  multi-archi-image:
-    runs-on: ubuntu-latest
-    needs: build-image
-    env:
-      SHA: ${{ needs.build-image.outputs.sha }}
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-
-      - name: Read values.yaml
-        id: values
-        run: |
-          FRONTEND_IMAGE=$(cat values.yaml | yq '.frontend.image')
-          echo "image=${FRONTEND_IMAGE}" >> $GITHUB_OUTPUT
-
-      - name: Login to Github Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set multi-archi image
-        run: |
-          docker manifest create \
-            ${{ steps.values.outputs.image }}:${{ env.SHA }} \
-             ${{ steps.values.outputs.image }}-arm64:${{ env.SHA }} \
-             ${{ steps.values.outputs.image }}-amd64:${{ env.SHA }}
-          docker manifest push \
-            ${{ steps.values.outputs.image }}:${{ env.SHA }}
-      - name: Push to latest in main branch
-        if: github.ref == 'refs/heads/main'
-        run: |
-          docker manifest create \
-            ${{ steps.values.outputs.image }}:latest \
-             ${{ steps.values.outputs.image }}-arm64:${{ env.SHA }} \
-             ${{ steps.values.outputs.image }}-amd64:${{ env.SHA }}
-          docker manifest push ${{ steps.values.outputs.image }}:latest
-
