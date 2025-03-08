@@ -57,13 +57,16 @@ jobs:
           SSH_HOST=${{ steps.get_values.outputs.dev_ssh_host }}
           SSH_USERNAME=${{ steps.get_values.outputs.dev_ssh_username }}
           DEPLOY_PATH=${{ steps.get_values.outputs.dev_deploy_path }}
+          IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
 
           ssh -o StrictHostKeyChecking=no admin@$SSH_HOST << EOF
           export DEPLOY_PATH=$DEPLOY_PATH
+          export IMAGE_NAME=$IMAGE_NAME
 
           cd $DEPLOY_PATH
           sudo docker-compose down
-          sudo docker-compose up -d
+          sudo docker rmi $IMAGE_NAME
+          sudo docker-compose up --build -d
           EOF
 
       - name: Update production image and deploy
@@ -88,5 +91,5 @@ jobs:
             "/grafana:/,/image:/s|image: .*xx|image: \${IMG_NM}:\${IMG_TAG}|" \
             $DOCKER_COMPOSE_FILE
           sudo docker-compose down
-          sudo docker-compose up -d
+          sudo docker-compose up --build -d
           EOF
