@@ -66,6 +66,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check required files exist
+        run: |
+          if [ -f "src/grafana/config/grafana.ini" ]
+          then
+            echo "grafana.ini found."
+          else
+            echo "src/grafana/config/grafana.ini is missing."
+            exit 1
+          fi
+          if [ -d "src/grafana/config/provisioning" ]
+          then
+            echo "provisioning directory found."
+          else
+            echo "src/grafana/config/provisioning directory is missing."
+            exit 1
+          fi
+
       - name: check root
         run: echo $ROOT_URLS
 
