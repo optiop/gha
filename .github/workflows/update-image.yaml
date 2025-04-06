@@ -1,5 +1,5 @@
 ---
-name: Deploy Latest Grafana to production
+name: Deploy Latest Changes to Dev / Production
 
 on:  # yamllint disable-line rule:truthy
   workflow_call:
@@ -17,12 +17,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: where am I?
+        run: pwd
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.ssh-private-key }}
-
+      
       - name: Get values from values.yaml
         id: get_values
         run: |
@@ -33,33 +36,38 @@ jobs:
           SSH_HOST_PROD=$(yq eval '.production.server.ssh-host' values.yaml)
           SSH_USERNAME_PROD=$(yq eval '.production.server.ssh-username' values.yaml)
           DEPLOY_PATH_PROD=$(yq eval '.production.server.deploy-directory' values.yaml)
-          DEPLOY_PROD=$(yq eval '.deploy_production' values.yaml)
+          REPO_PATH_PROD=$(yq eval '.production.server.repo-directory-prod' values.yaml)
 
           SSH_HOST_DEV=$(yq eval '.development.server.ssh-host' values.yaml)
           SSH_USERNAME_DEV=$(yq eval '.development.server.ssh-username' values.yaml)
           DEPLOY_PATH_DEV=$(yq eval '.development.server.deploy-directory' values.yaml)
-
+          REPO_PATH_DEV=$(yq eval '.development.server.repo-directory-dev' values.yaml)
+ 
+          echo "prod_ssh_host=$SSH_HOST_PROD" >> $GITHUB_OUTPUT
+          echo "prod_ssh_username=$SSH_USERNAME_PROD" >> $GITHUB_OUTPUT
+          echo "prod_deploy_path=$DEPLOY_PATH_PROD" >> $GITHUB_OUTPUT
+          echo "prod_repo_path=$REPO_PATH_PROD" >> $GITHUB_OUTPUT
           echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
           echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "docker_compose_file=$DOCKER_COMPOSE_FILE" >> $GITHUB_OUTPUT
 
-          echo "prod_ssh_host=$SSH_HOST_PROD" >> $GITHUB_OUTPUT
-          echo "prod_ssh_username=$SSH_USERNAME_PROD" >> $GITHUB_OUTPUT
-          echo "prod_deploy_path=$DEPLOY_PATH_PROD" >> $GITHUB_OUTPUT
-          echo "deploy_prod=$DEPLOY_PROD" >> $GITHUB_OUTPUT
-
           echo "dev_ssh_host=$SSH_HOST_DEV" >> $GITHUB_OUTPUT
           echo "dev_ssh_username=$SSH_USERNAME_DEV" >> $GITHUB_OUTPUT
           echo "dev_deploy_path=$DEPLOY_PATH_DEV" >> $GITHUB_OUTPUT
-
-      - name: Deploy to Development
+          echo "dev_repo_path=$REPO_PATH_DEV" >> $GITHUB_OUTPUT
+          echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
+      
+      - name: Deploy directory to dev server and restart Docker Compose
         run: |
           SSH_HOST=${{ steps.get_values.outputs.dev_ssh_host }}
           SSH_USERNAME=${{ steps.get_values.outputs.dev_ssh_username }}
           DEPLOY_PATH=${{ steps.get_values.outputs.dev_deploy_path }}
+          REPO_PATH=${{ steps.get_values.outputs.dev_repo_path }}
           IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
 
-          ssh -o StrictHostKeyChecking=no admin@$SSH_HOST << EOF
+          rsync -avzh  $REPO_PATH $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH
+
+          ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
           export DEPLOY_PATH=$DEPLOY_PATH
           export IMAGE_NAME=$IMAGE_NAME
 
@@ -69,16 +77,18 @@ jobs:
           sudo docker-compose up --build -d
           EOF
 
-      - name: Update production image and deploy
-        if: ${{ steps.get_values.outputs.deploy_prod == 'true' }}
+      - name: Deploy directory to production server and restart Docker Compose
+        if: ${{ github.event.inputs.deploy_production == 'true' }}
         run: |
-          IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
-          IMAGE_TAG=${{ steps.get_values.outputs.image_tag }}
           SSH_HOST=${{ steps.get_values.outputs.prod_ssh_host }}
           SSH_USERNAME=${{ steps.get_values.outputs.prod_ssh_username }}
           DEPLOY_PATH=${{ steps.get_values.outputs.prod_deploy_path }}
-          DOCKER_COMPOSE_FILE= \
-            ${{ steps.get_values.outputs.docker_compose_file }}
+          REPO_PATH=${{ steps.get_values.outputs.prod_repo_path }}
+          IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
+          IMAGE_TAG=${{ steps.get_values.outputs.image_tag }}
+          DOCKER_COMPOSE_FILE=${{ steps.get_values.outputs.docker_compose_file }}
+
+          rsync -avzh  $REPO_PATH $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH
 
           ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
           export IMG_NM=$IMAGE_NAME
