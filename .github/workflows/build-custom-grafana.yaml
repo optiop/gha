@@ -258,7 +258,10 @@ jobs:
         run: |
           docker push ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
 
-      - name: Push Docker image to GHCR main
-        if: github.ref == 'refs/heads/main'
+      - name: Save SHA to values.yaml
         run: |
-          docker push ${{ steps.values.outputs.image }}:latest
+          SHA=${{ steps.vars.outputs.sha }}
+          yq eval ".development.image.pull-request-sha = \"$SHA\"" -i values.yaml
+          git add values.yaml
+          git commit -m "Update SHA in values.yaml to $SHA"
+          git push

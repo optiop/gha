@@ -1,0 +1,35 @@
+---
+name: Tag Image as Latest on Merge
+
+on:   # yamllint disable-line rule:truthy
+  workflow_call:
+
+jobs:
+  tag-latest-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read SHA and image name from values.yaml
+        id: read-sha
+        run: |
+          SHA=$(yq eval '.development.image.pull-request-sha' values.yaml)
+          IMAGE_NAME=$(yq eval '.development.grafana.image' values.yaml)
+
+          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHA}" >> $GITHUB_OUTPUT
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull and re-tag Image
+        run: |
+          IMAGE=ghcr.io/${{ steps.read-sha.outputs.image_name }}:${{ steps.read-sha.outputs.short_sha }}
+          docker pull $IMAGE
+          docker tag $IMAGE $IMAGE:latest
+          docker push $IMAGE:latest
