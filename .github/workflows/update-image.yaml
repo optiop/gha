@@ -65,7 +65,7 @@ jobs:
           REPO_PATH=${{ steps.get_values.outputs.dev_repo_path }}
           IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
 
-          rsync -avzh  $REPO_PATH $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH
+          rsync -avzh -e "ssh -o StrictHostKeyChecking=no" $REPO_PATH $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH
 
           ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
           export DEPLOY_PATH=$DEPLOY_PATH
@@ -88,7 +88,7 @@ jobs:
           IMAGE_TAG=${{ steps.get_values.outputs.image_tag }}
           DOCKER_COMPOSE_FILE=${{ steps.get_values.outputs.docker_compose_file }}
 
-          rsync -avzh  $REPO_PATH $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH
+          rsync -avzh -e "ssh -o StrictHostKeyChecking=no" $REPO_PATH $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH
 
           ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
           export IMG_NM=$IMAGE_NAME
