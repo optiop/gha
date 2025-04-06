@@ -67,7 +67,7 @@ jobs:
           REPO_PATH=${{ steps.get_values.outputs.dev_repo_path }}
           IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
 
-          rsync -avzh -e "ssh -o StrictHostKeyChecking=no" $REPO_PATH $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH
+          sudo rsync -avzh -e "ssh -o StrictHostKeyChecking=no" $REPO_PATH/grafana $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH/grafana
 
           ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
           export DEPLOY_PATH=$DEPLOY_PATH
