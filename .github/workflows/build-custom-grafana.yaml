@@ -264,10 +264,9 @@ jobs:
           yq eval ".development.image.pull-request-sha = \"$SHA\"" -i values.yaml
           git config --global user.email "arian.delavarjou@gmail.com"
           git config --global user.name "Itsariandl"
-      
           BRANCH_NAME=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
           git checkout -b $BRANCH_NAME || git checkout $BRANCH_NAME
-      
+          git pull --rebase origin $BRANCH_NAME
           git add values.yaml
           git commit -m "Update SHA in values.yaml to $SHA"
           git push origin $BRANCH_NAME
