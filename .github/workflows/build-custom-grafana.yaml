@@ -268,6 +268,6 @@ jobs:
           git checkout -b $BRANCH_NAME || git checkout $BRANCH_NAME
           git add values.yaml
           git commit -m "Update SHA in values.yaml to $SHA"
-          git pull --rebase origin $BRANCH_NAME
-          git push origin $BRANCH_NAME
+          git pull --rebase origin $BRANCH_NAME || git rebase --abort
+          git push --force origin $BRANCH_NAME
           echo "SHA updated in values.yaml and pushed to $BRANCH_NAME"
