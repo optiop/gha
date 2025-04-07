@@ -31,7 +31,7 @@ jobs:
         run: |
           IMAGE=${{ steps.sha.outputs.image_name }}:${{ steps.sha.outputs.short_sha }}
           docker pull $IMAGE
-      
+
       - name: Tag the image and push it as latest
         run: |
           IMAGE=${{ steps.sha.outputs.image_name }}:${{ steps.sha.outputs.short_sha }}
