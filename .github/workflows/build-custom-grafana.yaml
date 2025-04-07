@@ -257,7 +257,16 @@ jobs:
         run: |
           docker push ${{ steps.values.outputs.image }}:${{ steps.vars.outputs.sha }}
 
-      - name: Push Docker image to GHCR main
-        if: github.ref == 'refs/heads/main'
+      - name: Save SHA to values.yaml
         run: |
-          docker push ${{ steps.values.outputs.image }}:latest
+          SHA=${{ steps.vars.outputs.sha }}
+          yq eval ".development.image.pull-request-sha = \"$SHA\"" -i values.yaml
+          git config --global user.email "arian.delavarjou@gmail.com"
+          git config --global user.name "Itsariandl"
+          BRANCH_NAME=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          git checkout -b $BRANCH_NAME || git checkout $BRANCH_NAME
+          git add values.yaml
+          git commit -m "Update SHA in values.yaml to $SHA"
+          git pull --rebase origin $BRANCH_NAME || git rebase --abort
+          git push --force origin $BRANCH_NAME
+          echo "SHA updated in values.yaml and pushed to $BRANCH_NAME"
