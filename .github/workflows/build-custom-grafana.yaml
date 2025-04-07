@@ -266,7 +266,8 @@ jobs:
           git config --global user.name "Itsariandl"
           BRANCH_NAME=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
           git checkout -b $BRANCH_NAME || git checkout $BRANCH_NAME
-          git pull --rebase origin $BRANCH_NAME
           git add values.yaml
           git commit -m "Update SHA in values.yaml to $SHA"
+          git pull --rebase origin $BRANCH_NAME
           git push origin $BRANCH_NAME
+          echo "SHA updated in values.yaml and pushed to $BRANCH_NAME"
