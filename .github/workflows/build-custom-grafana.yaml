@@ -262,6 +262,8 @@ jobs:
         run: |
           SHA=${{ steps.vars.outputs.sha }}
           yq eval ".development.image.pull-request-sha = \"$SHA\"" -i values.yaml
+          git config --global user.email "arian.delavarjou@gmail.com"
+          git config --global user.name "Itsariandl"
           git add values.yaml
           git commit -m "Update SHA in values.yaml to $SHA"
           git push
