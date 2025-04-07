@@ -250,7 +250,6 @@ jobs:
             RUN chown -R grafana /var/lib/grafana/plugins
             RUN find /var/lib/grafana/plugins/ -type f -name 'gpx*' -exec chmod +x {} \;
             COPY src/grafana/config/grafana.ini /etc/grafana/grafana.ini
-            COPY src/grafana/config/provisioning /etc/grafana/provisioning
             USER grafana
           EOF
 
