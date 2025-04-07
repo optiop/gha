@@ -1,107 +1,95 @@
 ---
-name: Deploy Latest Changes to Dev / Production
-
-on:  # yamllint disable-line rule:truthy
-  workflow_call:
-    secrets:
-      grafana-access-policy-token:
-        description: 'Grafana access policy token used to sign the plugins'
-        required: true
-      ssh-private-key:
-        description: 'SSH private key to connect to the server'
-        required: true
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: where am I?
-        run: |
-            pwd
-            ls -la
-
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.ssh-private-key }}
-      
-      - name: Get values from values.yaml
-        id: get_values
-        run: |
-          IMAGE_NAME=$(yq eval '.production.grafana.image' values.yaml)
-          IMAGE_TAG=$(yq eval '.production.grafana.tag' values.yaml)
-          DOCKER_COMPOSE_FILE=$(yq eval '.production.server.docker-compose-file' values.yaml)
-
-          SSH_HOST_PROD=$(yq eval '.production.server.ssh-host' values.yaml)
-          SSH_USERNAME_PROD=$(yq eval '.production.server.ssh-username' values.yaml)
-          DEPLOY_PATH_PROD=$(yq eval '.production.server.deploy-directory' values.yaml)
-          REPO_PATH_PROD=$(yq eval '.production.server.repo-directory-prod' values.yaml)
-
-          SSH_HOST_DEV=$(yq eval '.development.server.ssh-host' values.yaml)
-          SSH_USERNAME_DEV=$(yq eval '.development.server.ssh-username' values.yaml)
-          DEPLOY_PATH_DEV=$(yq eval '.development.server.deploy-directory' values.yaml)
-          REPO_PATH_DEV=$(yq eval '.development.server.repo-directory-dev' values.yaml)
- 
-          echo "prod_ssh_host=$SSH_HOST_PROD" >> $GITHUB_OUTPUT
-          echo "prod_ssh_username=$SSH_USERNAME_PROD" >> $GITHUB_OUTPUT
-          echo "prod_deploy_path=$DEPLOY_PATH_PROD" >> $GITHUB_OUTPUT
-          echo "prod_repo_path=$REPO_PATH_PROD" >> $GITHUB_OUTPUT
-          echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
-          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "docker_compose_file=$DOCKER_COMPOSE_FILE" >> $GITHUB_OUTPUT
-
-          echo "dev_ssh_host=$SSH_HOST_DEV" >> $GITHUB_OUTPUT
-          echo "dev_ssh_username=$SSH_USERNAME_DEV" >> $GITHUB_OUTPUT
-          echo "dev_deploy_path=$DEPLOY_PATH_DEV" >> $GITHUB_OUTPUT
-          echo "dev_repo_path=$REPO_PATH_DEV" >> $GITHUB_OUTPUT
-          echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
-      
-      - name: Deploy directory to dev server and restart Docker Compose
-        run: |
-          SSH_HOST=${{ steps.get_values.outputs.dev_ssh_host }}
-          SSH_USERNAME=${{ steps.get_values.outputs.dev_ssh_username }}
-          DEPLOY_PATH=${{ steps.get_values.outputs.dev_deploy_path }}
-          REPO_PATH=${{ steps.get_values.outputs.dev_repo_path }}
-          IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
-
-          sudo rsync -avzh -e "ssh -o StrictHostKeyChecking=no" $REPO_PATH/grafana $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH/grafana
-
-          ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
-          export DEPLOY_PATH=$DEPLOY_PATH
-          export IMAGE_NAME=$IMAGE_NAME
-
-          cd $DEPLOY_PATH
-          sudo docker-compose down
-          sudo docker rmi $IMAGE_NAME
-          sudo docker-compose up --build -d
-          EOF
-
-      - name: Deploy directory to production server and restart Docker Compose
-        if: ${{ github.event.inputs.deploy_production == 'true' }}
-        run: |
-          SSH_HOST=${{ steps.get_values.outputs.prod_ssh_host }}
-          SSH_USERNAME=${{ steps.get_values.outputs.prod_ssh_username }}
-          DEPLOY_PATH=${{ steps.get_values.outputs.prod_deploy_path }}
-          REPO_PATH=${{ steps.get_values.outputs.prod_repo_path }}
-          IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
-          IMAGE_TAG=${{ steps.get_values.outputs.image_tag }}
-          DOCKER_COMPOSE_FILE=${{ steps.get_values.outputs.docker_compose_file }}
-
-          rsync -avzh -e "ssh -o StrictHostKeyChecking=no" $REPO_PATH $SSH_USERNAME@$SSH_HOST:$DEPLOY_PATH
-
-          ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
-          export IMG_NM=$IMAGE_NAME
-          export IMG_TAG=$IMAGE_TAG
-          export DEPLOY_PATH=$DEPLOY_PATH
-          export DOCKER_COMPOSE_FILE=$DOCKER_COMPOSE_FILE
-
-          cd $DEPLOY_PATH
-          sudo sed -i \
-            "/grafana:/,/image:/s|image: .*xx|image: \${IMG_NM}:\${IMG_TAG}|" \
-            $DOCKER_COMPOSE_FILE
-          sudo docker-compose down
-          sudo docker-compose up --build -d
-          EOF
+  name: Deploy Latest Grafana to production
+  
+  on:  # yamllint disable-line rule:truthy
+    workflow_call:
+      secrets:
+        grafana-access-policy-token:
+          description: 'Grafana access policy token used to sign the plugins'
+          required: true
+        ssh-private-key:
+          description: 'SSH private key to connect to the server'
+          required: true
+  
+  jobs:
+    deploy:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+  
+        - name: Set up SSH
+          uses: webfactory/ssh-agent@v0.8.0
+          with:
+            ssh-private-key: ${{ secrets.ssh-private-key }}
+  
+        - name: Get values from values.yaml
+          id: get_values
+          run: |
+            IMAGE_NAME=$(yq eval '.production.grafana.image' values.yaml)
+            IMAGE_TAG=$(yq eval '.production.grafana.tag' values.yaml)
+            DOCKER_COMPOSE_FILE=$(yq eval '.production.server.docker-compose-file' values.yaml)
+  
+            SSH_HOST_PROD=$(yq eval '.production.server.ssh-host' values.yaml)
+            SSH_USERNAME_PROD=$(yq eval '.production.server.ssh-username' values.yaml)
+            DEPLOY_PATH_PROD=$(yq eval '.production.server.deploy-directory' values.yaml)
+            DEPLOY_PROD=$(yq eval '.deploy_production' values.yaml)
+  
+            SSH_HOST_DEV=$(yq eval '.development.server.ssh-host' values.yaml)
+            SSH_USERNAME_DEV=$(yq eval '.development.server.ssh-username' values.yaml)
+            DEPLOY_PATH_DEV=$(yq eval '.development.server.deploy-directory' values.yaml)
+  
+            echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
+            echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+            echo "docker_compose_file=$DOCKER_COMPOSE_FILE" >> $GITHUB_OUTPUT
+  
+            echo "prod_ssh_host=$SSH_HOST_PROD" >> $GITHUB_OUTPUT
+            echo "prod_ssh_username=$SSH_USERNAME_PROD" >> $GITHUB_OUTPUT
+            echo "prod_deploy_path=$DEPLOY_PATH_PROD" >> $GITHUB_OUTPUT
+            echo "deploy_prod=$DEPLOY_PROD" >> $GITHUB_OUTPUT
+  
+            echo "dev_ssh_host=$SSH_HOST_DEV" >> $GITHUB_OUTPUT
+            echo "dev_ssh_username=$SSH_USERNAME_DEV" >> $GITHUB_OUTPUT
+            echo "dev_deploy_path=$DEPLOY_PATH_DEV" >> $GITHUB_OUTPUT
+  
+        - name: Deploy to Development
+          run: |
+            SSH_HOST=${{ steps.get_values.outputs.dev_ssh_host }}
+            SSH_USERNAME=${{ steps.get_values.outputs.dev_ssh_username }}
+            DEPLOY_PATH=${{ steps.get_values.outputs.dev_deploy_path }}
+            IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
+  
+            ssh -o StrictHostKeyChecking=no admin@$SSH_HOST << EOF
+            export DEPLOY_PATH=$DEPLOY_PATH
+            export IMAGE_NAME=$IMAGE_NAME
+  
+            cd $DEPLOY_PATH
+            sudo docker-compose down
+            sudo docker rmi $IMAGE_NAME
+            sudo docker-compose up --build -d
+            EOF
+  
+        - name: Update production image and deploy
+          if: ${{ steps.get_values.outputs.deploy_prod == 'true' }}
+          run: |
+            IMAGE_NAME=${{ steps.get_values.outputs.image_name }}
+            IMAGE_TAG=${{ steps.get_values.outputs.image_tag }}
+            SSH_HOST=${{ steps.get_values.outputs.prod_ssh_host }}
+            SSH_USERNAME=${{ steps.get_values.outputs.prod_ssh_username }}
+            DEPLOY_PATH=${{ steps.get_values.outputs.prod_deploy_path }}
+            DOCKER_COMPOSE_FILE= \
+              ${{ steps.get_values.outputs.docker_compose_file }}
+  
+            ssh -o StrictHostKeyChecking=no $SSH_USERNAME@$SSH_HOST << EOF
+            export IMG_NM=$IMAGE_NAME
+            export IMG_TAG=$IMAGE_TAG
+            export DEPLOY_PATH=$DEPLOY_PATH
+            export DOCKER_COMPOSE_FILE=$DOCKER_COMPOSE_FILE
+  
+            cd $DEPLOY_PATH
+            sudo sed -i \
+              "/grafana:/,/image:/s|image: .*xx|image: \${IMG_NM}:\${IMG_TAG}|" \
+              $DOCKER_COMPOSE_FILE
+            sudo docker-compose down
+            sudo docker-compose up --build -d
+            EOF
