@@ -27,9 +27,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull and re-tag Image
+      - name: Pull the Image
         run: |
           IMAGE=${{ steps.sha.outputs.image_name }}:${{ steps.sha.outputs.short_sha }}
           docker pull $IMAGE
-          docker tag $IMAGE $IMAGE:latest
-          docker push $IMAGE:latest
+      
+      - name: Tag the image and push it as latest
+        run: |
+          IMAGE=${{ steps.sha.outputs.image_name }}:${{ steps.sha.outputs.short_sha }}
+          docker tag $IMAGE ${{ steps.sha.outputs.image_name }}:latest
+          docker push ${{ steps.sha.outputs.image_name }}:latest
