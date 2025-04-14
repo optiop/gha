@@ -46,6 +46,24 @@ frontend:
   image: ghcr.io/optiop/enlighten-cyber-intelligence
 ```
 
+
+## Build image
+```yaml
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-exporter-image:
+    permissions: write-all
+    uses:
+      optiop/gha/.github/workflows/build-image.yaml@v1.1.0
+    with:
+      context: src/exporter
+      name: exporter
+```
+
+
 ## Build
 ```bash
 npm install
