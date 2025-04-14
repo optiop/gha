@@ -58,7 +58,7 @@ jobs:
     permissions: write-all
     uses:
       optiop/gha/.github/workflows/build-image.yaml@v1.1.0
-    inputs:
+    with:
       context: src/exporter
       name: exporter
 ```

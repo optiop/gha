@@ -1,6 +1,7 @@
+---
 name: Build and Push Docker Image
 
-on:
+on:  # yamllint disable-line
   workflow_call:
     inputs:
       context:
@@ -9,9 +10,6 @@ on:
       name:
         required: true
         type: string
-
-env:
-  VERSION: latest
 
 permissions:
   contents: read
@@ -27,9 +25,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set outputs
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
         with:
@@ -41,7 +36,11 @@ jobs:
       - name: Set docker version
         id: vars
         run: |
-          [[ "${{ github.ref_type }}" == "tag" ]] && VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,;s/^v//')
+          VERSION=$(git rev-parse --short HEAD)
+          [[ "${{ github.ref_type }}" == "tag" ]] && \
+            VERSION=v$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,;s/^v//')
+          [[ "${{ github.ref }}" == "refs/heads/main" && \
+             "${{ github.ref_type }}" == "push" ]] && VERSION=latest
           echo "version=${VERSION:-latest}" >> $GITHUB_OUTPUT
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
@@ -55,7 +54,7 @@ jobs:
           push: true
           platforms: linux/arm64/v8,linux/amd64
           tags: |
-            ghcr.io/${{ github.repository  }}-${{ inputs.name }}:${{ steps.vars.outputs.sha_short }}
+            ghcr.io/${{ github.repository }}-${{ inputs.name }}:${{ steps.vars.outputs.sha_short }}
             ghcr.io/${{ github.repository }}-${{ inputs.name }}:${{ steps.vars.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
