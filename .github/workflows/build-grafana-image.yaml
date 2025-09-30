@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 80
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
@@ -57,7 +57,7 @@ jobs:
       IMAGE: ghcr.io/optiop/${{ inputs.project-name }}
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: 'recursive'
 
