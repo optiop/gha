@@ -32,10 +32,6 @@ jobs:
         run: npm run build
         working-directory: ${{ inputs.path }}
 
-      - name: Export the Next.js site to static HTML
-        run: npx next export
-        working-directory: ${{ inputs.path }}
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
