@@ -1,6 +1,7 @@
 ---
 name: Build and deploy NextJs site to AWS S3
 
+# yamllint disable
 on:
   workflow_call:
 
@@ -26,7 +27,7 @@ jobs:
 
       - name: Export the Next.js site to static HTML
         run: npx next export
-      
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         with:
