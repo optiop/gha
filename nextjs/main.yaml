@@ -1,0 +1,35 @@
+---
+name: Build and deploy NextJs site to AWS S3
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Build Website
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the Next.js site
+        run: npm run build
+
+      - name: Export the Next.js site to static HTML
+        run: npx next export
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: nextjs-static-site
+          path: out/**
+          retention-days: 30
