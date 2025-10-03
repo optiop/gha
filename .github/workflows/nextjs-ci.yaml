@@ -4,6 +4,11 @@ name: Build and deploy NextJs site to AWS S3
 # yamllint disable
 on:
   workflow_call:
+    inputs:
+      path:
+        required: false
+        type: string
+        default: 'src'
 
 jobs:
   build:
@@ -21,16 +26,19 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: ${{ inputs.path }}
 
       - name: Build the Next.js site
         run: npm run build
+        working-directory: ${{ inputs.path }}
 
       - name: Export the Next.js site to static HTML
         run: npx next export
+        working-directory: ${{ inputs.path }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-static-site
-          path: out/**
+          path: ${{ inputs.path }}/out/**
           retention-days: 30
