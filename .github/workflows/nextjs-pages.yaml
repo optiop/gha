@@ -25,9 +25,32 @@ jobs:
           node-version: '22'
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          static_site_generator: next
+        working-directory: ${{ inputs.path }}
+        run: |
+          rm next.config.mjs
+          cat << 'EOF' > next.config.mjs
+            import nextra from 'nextra'
+            
+            /**
+            * @type {import('next').NextConfig}
+            */
+            const nextConfig = {
+              basePath: '${{ github.event.repository.name }}/', 
+              output: 'export',
+              images: {
+                unoptimized: true // mandatory, otherwise won't export
+              }
+            }
+            const withNextra = nextra({
+              // ... other Nextra config options
+            })
+
+            export default withNextra(nextConfig)
+          EOF
+
+      - name: Echo NextJs config
+        working-directory: ${{ inputs.path }}
+        run: cat next.config.mjs
 
       - name: Install dependencies
         run: npm install
