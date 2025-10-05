@@ -24,6 +24,34 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Setup Pages
+        working-directory: ${{ inputs.path }}
+        run: |
+          rm next.config.mjs
+          cat << 'EOF' > next.config.mjs
+            import nextra from 'nextra'
+            
+            /**
+            * @type {import('next').NextConfig}
+            */
+            const nextConfig = {
+              basePath: '/${{ github.event.repository.name }}', 
+              output: 'export',
+              images: {
+                unoptimized: true // mandatory, otherwise won't export
+              }
+            }
+            const withNextra = nextra({
+              // ... other Nextra config options
+            })
+
+            export default withNextra(nextConfig)
+          EOF
+
+      - name: Echo NextJs config
+        working-directory: ${{ inputs.path }}
+        run: cat next.config.mjs
+
       - name: Install dependencies
         run: npm install
         working-directory: ${{ inputs.path }}
@@ -33,11 +61,10 @@ jobs:
         working-directory: ${{ inputs.path }}
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           name: github-pages
-          path: ${{ inputs.path }}/out/**
-          retention-days: 30
+          path: ${{ inputs.path }}/out
 
   deploy:
     runs-on: ubuntu-latest
