@@ -85,6 +85,7 @@ jobs:
         run: echo S3_URL=http://${{ inputs.s3-bucket }}.s3-website.${{ inputs.aws-region }}.amazonaws.com >> $GITHUB_OUTPUT
       
       - name: Print as comment
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
