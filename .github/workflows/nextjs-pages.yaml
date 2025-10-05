@@ -1,0 +1,51 @@
+---
+name: Build and deploy NextJs site to AWS S3
+
+# yamllint disable
+on:
+  workflow_call:
+    inputs:
+      path:
+        required: false
+        type: string
+        default: 'src'
+
+jobs:
+  build:
+    name: Build Website
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ${{ inputs.path }}
+
+      - name: Build the Next.js site
+        run: npm run build
+        working-directory: ${{ inputs.path }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-pages
+          path: ${{ inputs.path }}/out/**
+          retention-days: 30
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
