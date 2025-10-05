@@ -41,8 +41,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           name: github-pages
-          path: ${{ inputs.path }}/out/**
-          retention-days: 30
+          path: ${{ inputs.path }}/out
 
   deploy:
     runs-on: ubuntu-latest
