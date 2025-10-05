@@ -19,6 +19,10 @@ on:
         required: false
         type: string
         default: eu-central-1
+      pages:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   build:
@@ -88,3 +92,15 @@ jobs:
             Deployed to S3 bucket: ${{ inputs.s3-bucket }}
             Link: [${{ steps.echo_url.outputs.S3_URL }}](${{ steps.echo_url.outputs.S3_URL }})
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    if: ${{ inputs.pages == true && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
