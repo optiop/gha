@@ -37,10 +37,8 @@ jobs:
         run: npm run build
         working-directory: ${{ inputs.path }}
 
-      # v4 through error "Artifact could not be deployed."
-      # https://stackoverflow.com/questions/79410241/error-artifact-could-not-be-deployed-please-ensure-the-content-does-not-contai
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-pages-artifact@v3
         with:
           name: github-pages
           path: ${{ inputs.path }}/out/**
