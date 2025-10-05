@@ -94,7 +94,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
-    if: ${{ inputs.pages == true && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     needs: build
     environment:
