@@ -9,6 +9,16 @@ on:
         required: false
         type: string
         default: 'src'
+      role-arn:
+        required: true
+        type: string
+      s3-bucket:
+        required: true
+        type: string
+      aws-region:
+        required: false
+        type: string
+        default: eu-central-1
 
 jobs:
   build:
@@ -38,3 +48,43 @@ jobs:
           name: nextjs-static-site
           path: ${{ inputs.path }}/out/**
           retention-days: 30
+
+  stage:
+    name: Deploy to Staging
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-static-site
+    
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync . s3://${{ inputs.s3-bucket }} --delete --acl public-read
+        env:
+          AWS_REGION: ${{ inputs.aws-region }}
+
+      - name: Echo S3 name
+        id: echo_s3
+        run: echo "S3_BUCKET=${{ inputs.s3-bucket }}" >> $GITHUB_OUTPUT
+
+      - name: Echo URL
+        id: echo_url
+        run: echo S3_URL=http://${{ inputs.s3-bucket }}.s3-website.${{ inputs.aws-region }}.amazonaws.com >> $GITHUB_OUTPUT
+      
+      - name: Print as comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Deployed to S3 bucket: ${{ inputs.s3-bucket }}
+            Link: [${{ steps.echo_url.outputs.S3_URL }}](${{ steps.echo_url.outputs.S3_URL }})
+          token: ${{ secrets.GITHUB_TOKEN }}
