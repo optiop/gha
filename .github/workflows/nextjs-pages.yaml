@@ -37,10 +37,6 @@ jobs:
         run: npm run build
         working-directory: ${{ inputs.path }}
 
-      - name: Export static site
-        run: npm run export
-        working-directory: ${{ inputs.path }}
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
