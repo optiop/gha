@@ -24,12 +24,21 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          static_site_generator: next
+
       - name: Install dependencies
         run: npm install
         working-directory: ${{ inputs.path }}
 
       - name: Build the Next.js site
         run: npm run build
+        working-directory: ${{ inputs.path }}
+
+      - name: Export static site
+        run: npm run export
         working-directory: ${{ inputs.path }}
 
       - name: Upload build artifacts
