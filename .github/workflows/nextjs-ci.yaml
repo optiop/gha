@@ -65,25 +65,20 @@ jobs:
         with:
           role-to-assume: ${{ inputs.role-arn }}
           aws-region: ${{ inputs.aws-region }}
-      
-      - name: Get short git hash
-        run: |
-          git_hash=$(git rev-parse --short "$GITHUB_SHA")
-          echo "GIT_SHORT_HASH=$git_hash" >> $GITHUB_ENV
 
       - name: Deploy to S3
         run: |
-          aws s3 sync . s3://${{ inputs.s3-bucket }}/${{ env.GIT_SHORT_HASH }} --delete --acl public-read
+          aws s3 sync . s3://${{ inputs.s3-bucket }}/${{ github.sha }} --delete --acl public-read
         env:
           AWS_REGION: ${{ inputs.aws-region }}
 
       - name: Echo S3 name
         id: echo_s3
         run: echo "S3_BUCKET=${{ inputs.s3-bucket }}" >> $GITHUB_OUTPUT
-      
+
       - name: Echo URL
         id: echo_url
-        run: echo S3_URL=http://${{ inputs.s3-bucket }}.s3-website.${{ inputs.aws-region }}.amazonaws.com/${{ env.GIT_SHORT_HASH }} >> $GITHUB_OUTPUT
+        run: echo S3_URL=http://${{ inputs.s3-bucket }}.s3-website.${{ inputs.aws-region }}.amazonaws.com/${{ github.sha }} >> $GITHUB_OUTPUT
       
       - name: Print as comment
         uses: peter-evans/create-or-update-comment@v4
