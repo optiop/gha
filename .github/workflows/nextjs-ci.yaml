@@ -73,12 +73,12 @@ jobs:
       - name: Configure npm authentication
         working-directory: ${{ inputs.path }}
         run: |
-          echo "@optiop:registry=https://npm.pkg.github.com" >> ~/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+          echo "always-auth: true" >> .npmrc
 
       - name: Verify npm configuration
         working-directory: ${{ inputs.path }}
-        run: cat ~/.npmrc
+        run: cat .npmrc
 
       - name: Install dependencies
         run: npm install
