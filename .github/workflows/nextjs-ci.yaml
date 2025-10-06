@@ -68,7 +68,7 @@ jobs:
         working-directory: ${{ inputs.path }}
 
       - name: Build the Next.js site
-        run: npm run build
+        run: npm run build -- --base=/${{ inputs.basePath }}
         working-directory: ${{ inputs.path }}
 
       - name: Upload build artifacts
