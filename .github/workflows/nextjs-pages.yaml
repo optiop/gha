@@ -53,6 +53,17 @@ jobs:
         working-directory: ${{ inputs.path }}
         run: cat next.config.mjs
 
+      - name: Configure npm authentication
+        working-directory: ${{ inputs.path }}
+        run: |
+          echo "@optiop:registry=https://npm.pkg.github.com/optiop" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          echo "always-auth: true" >> .npmrc
+
+          echo "@optiop:registry=https://npm.pkg.github.com/optiop" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          echo "always-auth: true" >> ~/.npmrc
+
       - name: Install dependencies
         run: npm install
         working-directory: ${{ inputs.path }}
