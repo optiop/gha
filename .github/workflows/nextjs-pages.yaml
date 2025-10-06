@@ -23,7 +23,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
-          registry-url: https://npm.pkg.github.com/
 
       - name: Setup Pages
         working-directory: ${{ inputs.path }}
@@ -67,8 +66,6 @@ jobs:
       - name: Install dependencies
         run: npm install
         working-directory: ${{ inputs.path }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Search for Slidev in package.json
         id: slidev
