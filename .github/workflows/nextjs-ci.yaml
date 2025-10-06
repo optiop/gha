@@ -83,7 +83,7 @@ jobs:
         run: |
           if [ "${{ steps.slidev.outputs.slidev }}" = "true" ]; then
             echo "Building Slidev presentation"
-            npm run build -- --base=/${{ inputs.base-path }} --out=out
+            npm run build -- --base=/${{ inputs.base-path }} 
           else
             echo "Building Next.js site"
             npm run build
