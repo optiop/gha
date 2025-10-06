@@ -37,21 +37,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Configure npm authentication
-        working-directory: ${{ inputs.path }}
-        run: |
-          echo "@optiop:registry=https://npm.pkg.github.com" >> ~/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
 
-      - name: Verify npm configuration
-        working-directory: ${{ inputs.path }}
-        run: cat ~/.npmrc
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
-          settings-path: ${{ inputs.path }}.npmrc
 
 
       - name: Setup subpath
@@ -78,6 +69,16 @@ jobs:
 
             export default withNextra(nextConfig)
           EOF
+
+      - name: Configure npm authentication
+        working-directory: ${{ inputs.path }}
+        run: |
+          echo "@optiop:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+
+      - name: Verify npm configuration
+        working-directory: ${{ inputs.path }}
+        run: cat ~/.npmrc
 
       - name: Install dependencies
         run: npm install
