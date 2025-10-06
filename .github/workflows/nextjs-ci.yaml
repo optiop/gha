@@ -72,6 +72,9 @@ jobs:
         run: |
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
 
+      - name: Verify npm configuration
+        run: cat ~/.npmrc
+
       - name: Install dependencies
         run: npm install
         working-directory: ${{ inputs.path }}
