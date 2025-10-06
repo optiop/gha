@@ -25,7 +25,7 @@ on:
         default: ''
     secrets:
       GITHUB_TOKEN:
-        required: false
+        required: true
   
 
 jobs:
