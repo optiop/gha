@@ -67,9 +67,27 @@ jobs:
       - name: Install dependencies
         run: npm install
         working-directory: ${{ inputs.path }}
+      
+      - name: Search for Slidev in package.json
+        id: slidev
+        working-directory: ${{ inputs.path }}
+        run: |
+          if grep -q '"slidev"' package.json; then
+            echo "Slidev found, enable variable slidev=true"
+            echo "slidev=true" >> $GITHUB_OUTPUT
+          else
+            echo "Slidev not found"
+          fi
 
       - name: Build the Next.js site
-        run: npm run build -- --base /${{ inputs.base-path }} --out out
+        run: |
+          if [ "${{ steps.slidev.outputs.slidev }}" = "true" ]; then
+            echo "Building Slidev presentation"
+            npm run slidev build -- --base=/${{ inputs.base-path }} --out=out
+          else
+            echo "Building Next.js site"
+            npm run build
+          fi
         working-directory: ${{ inputs.path }}
 
       - name: Upload build artifacts
