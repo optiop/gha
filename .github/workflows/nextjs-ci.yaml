@@ -23,7 +23,10 @@ on:
         required: false
         type: string
         default: ''
-
+    secrets:
+      GITHUB_TOKEN:
+        required: false
+  
 
 jobs:
   build:
