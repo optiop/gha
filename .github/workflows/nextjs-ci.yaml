@@ -23,7 +23,6 @@ on:
         required: false
         type: string
         default: ''
-  
 
 jobs:
   build:
