@@ -19,7 +19,7 @@ on:
         required: false
         type: string
         default: eu-central-1
-      basePath:
+      base-path:
         required: false
         type: string
         default: ''
@@ -39,7 +39,7 @@ jobs:
           node-version: '22'
 
       - name: Setup subpath
-        if: ${{ inputs.basePath != '' }}
+        if: ${{ inputs.base-path != '' }}
         working-directory: ${{ inputs.path }}
         run: |
           rm next.config.mjs
@@ -50,7 +50,7 @@ jobs:
             * @type {import('next').NextConfig}
             */
             const nextConfig = {
-              basePath: '/${{ inputs.basePath }}', 
+              basePath: '/${{ inputs.base-path }}',
               output: 'export',
               images: {
                 unoptimized: true // mandatory, otherwise won't export
@@ -68,7 +68,7 @@ jobs:
         working-directory: ${{ inputs.path }}
 
       - name: Build the Next.js site
-        run: npm run build -- --base=/${{ inputs.basePath }}
+        run: npm run build
         working-directory: ${{ inputs.path }}
 
       - name: Upload build artifacts
@@ -97,7 +97,7 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          aws s3 sync . s3://${{ inputs.s3-bucket }}/${{ inputs.basePath }} --delete --acl public-read
+          aws s3 sync . s3://${{ inputs.s3-bucket }}/${{ inputs.base-path }} --delete --acl public-read
         env:
           AWS_REGION: ${{ inputs.aws-region }}
 
@@ -107,7 +107,7 @@ jobs:
 
       - name: Echo URL
         id: echo_url
-        run: echo S3_URL=http://${{ inputs.s3-bucket }}.s3-website.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.basePath }} >> $GITHUB_OUTPUT
+        run: echo S3_URL=http://${{ inputs.s3-bucket }}.s3-website.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.base-path }} >> $GITHUB_OUTPUT
       
       - name: Print as comment
         if: ${{ github.event_name == 'pull_request' }}
