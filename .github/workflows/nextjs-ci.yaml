@@ -50,7 +50,7 @@ jobs:
             * @type {import('next').NextConfig}
             */
             const nextConfig = {
-              basePath: '${{ inputs.basePath }}', 
+              basePath: '/${{ inputs.basePath }}', 
               output: 'export',
               images: {
                 unoptimized: true // mandatory, otherwise won't export
@@ -97,7 +97,7 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          aws s3 sync . s3://${{ inputs.s3-bucket }}${{ inputs.basePath }} --delete --acl public-read
+          aws s3 sync . s3://${{ inputs.s3-bucket }}/${{ inputs.basePath }} --delete --acl public-read
         env:
           AWS_REGION: ${{ inputs.aws-region }}
 
@@ -107,7 +107,7 @@ jobs:
 
       - name: Echo URL
         id: echo_url
-        run: echo S3_URL=http://${{ inputs.s3-bucket }}.s3-website.${{ inputs.aws-region }}.amazonaws.com${{ inputs.basePath }} >> $GITHUB_OUTPUT
+        run: echo S3_URL=http://${{ inputs.s3-bucket }}.s3-website.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.basePath }} >> $GITHUB_OUTPUT
       
       - name: Print as comment
         if: ${{ github.event_name == 'pull_request' }}
