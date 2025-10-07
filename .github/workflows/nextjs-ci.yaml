@@ -97,6 +97,7 @@ jobs:
           else
             echo "Building Next.js site"
             npm run build
+            npm run postbuild
           fi
         working-directory: ${{ inputs.path }}
 
