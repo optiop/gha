@@ -42,7 +42,7 @@ jobs:
         if: ${{ inputs.base-path != '' }}
         working-directory: ${{ inputs.path }}
         run: |
-          sed -i  '/nextConfig/a\
+          sed -i  '/const nextConfig/a\
             basePath: "/${{ inputs.base-path }}",' next.config.mjs
 
       - name:  Print content of next.config.mjs
