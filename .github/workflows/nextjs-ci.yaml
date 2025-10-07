@@ -104,6 +104,8 @@ jobs:
       - name: List all files
         run: |
           ls -la ${{ inputs.path }}/out
+          ls -la ${{ inputs.path }}/public
+          ls -la ${{ inputs.path }}
           ls -la .
 
       - name: Upload build artifacts
