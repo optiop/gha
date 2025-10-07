@@ -45,6 +45,11 @@ jobs:
           sed -i  '/nextConfig/a\
             basePath: "/${{ inputs.base-path }}",' next.config.mjs
 
+      - name:  Print content of next.config.mjs
+        working-directory: ${{ inputs.path }}
+        run: |
+          cat next.config.mjs
+
       - name: Configure npm authentication
         working-directory: ${{ inputs.path }}
         run: |
