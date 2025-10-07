@@ -89,6 +89,14 @@ jobs:
           fi
         working-directory: ${{ inputs.path }}
 
+      - name: Copy static files to out directory
+        run: |
+          ls -la ${{ inputs.path }}/out
+          ls -la ${{ inputs.path }}/public
+          ls -la ${{ inputs.path }}
+          ls -la .
+          cp -R ${{ inputs.path }}/public/* ${{ inputs.path }}/out/ || true
+
       - name: Upload build artifacts
         uses: actions/upload-pages-artifact@v4
         with:
