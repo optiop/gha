@@ -102,9 +102,9 @@ jobs:
 
       - name: Copy static files to out directory
         run: |
-          ls -la ${{ inputs.path }}/out
-          ls -la ${{ inputs.path }}/public
-          ls -la ${{ inputs.path }}
+          ls -la ${{ inputs.path }}/out || true
+          ls -la ${{ inputs.path }}/public || true
+          ls -la ${{ inputs.path }} || true
           ls -la .
           cp -R ${{ inputs.path }}/public/* ${{ inputs.path }}/out/ || true
 
