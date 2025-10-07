@@ -100,6 +100,9 @@ jobs:
           fi
         working-directory: ${{ inputs.path }}
 
+      - name: List all files
+        run: ls -la ${{ inputs.path }}/out
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
