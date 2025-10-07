@@ -42,26 +42,13 @@ jobs:
         if: ${{ inputs.base-path != '' }}
         working-directory: ${{ inputs.path }}
         run: |
-          rm next.config.mjs || true
-          cat << 'EOF' > next.config.mjs
-            import nextra from 'nextra'
-            
-            /**
-            * @type {import('next').NextConfig}
-            */
-            const nextConfig = {
-              basePath: '/${{ inputs.base-path }}',
-              output: 'export',
-              images: {
-                unoptimized: true // mandatory, otherwise won't export
-              }
-            }
-            const withNextra = nextra({
-              // ... other Nextra config options
-            })
+          sed -i  '/const nextConfig/a\
+            basePath: "/${{ inputs.base-path }}",' next.config.mjs
 
-            export default withNextra(nextConfig)
-          EOF
+      - name:  Print content of next.config.mjs
+        working-directory: ${{ inputs.path }}
+        run: |
+          cat next.config.mjs
 
       - name: Configure npm authentication
         working-directory: ${{ inputs.path }}
@@ -145,7 +132,7 @@ jobs:
       - name: Echo URL
         id: echo_url
         run: echo S3_URL=http://${{ inputs.s3-bucket }}.s3-website.${{ inputs.aws-region }}.amazonaws.com/${{ inputs.base-path }} >> $GITHUB_OUTPUT
-      
+
       - name: Print as comment
         if: ${{ github.event_name == 'pull_request' }}
         uses: peter-evans/create-or-update-comment@v5
