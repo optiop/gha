@@ -8,7 +8,7 @@ on:
       path:
         required: false
         type: string
-        default: 'src'
+        default: "src"
       role-arn:
         required: true
         type: string
@@ -22,7 +22,7 @@ on:
       base-path:
         required: false
         type: string
-        default: ''
+        default: ""
 
 jobs:
   build:
@@ -35,17 +35,21 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22'
-
+          node-version: "22"
 
       - name: Setup subpath
         if: ${{ inputs.base-path != '' }}
         working-directory: ${{ inputs.path }}
         run: |
-          sed -i  '/const nextConfig/a\
-            basePath: "/${{ inputs.base-path }}",' next.config.mjs
+          if [ -f next.config.mjs ]; then
+            echo "next.config.mjs found. Updating basePath..."
+            sed -i  '/const nextConfig/a\
+              basePath: "/${{ inputs.base-path }}",' next.config.mjs
+          else
+            echo "next.config.mjs not found, skipping."
+          fi
 
-      - name:  Print content of next.config.mjs
+      - name: Print content of next.config.mjs
         working-directory: ${{ inputs.path }}
         run: |
           cat next.config.mjs
