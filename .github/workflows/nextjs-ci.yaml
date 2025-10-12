@@ -52,7 +52,12 @@ jobs:
       - name: Print content of next.config.mjs
         working-directory: ${{ inputs.path }}
         run: |
-          cat next.config.mjs
+          if [ -f "next.config.mjs" ]; then
+            echo "✅ next.config.mjs found. Printing content:"
+            cat next.config.mjs
+          else
+            echo "☑️ next.config.mjs not found. Skipping step."
+          fi
 
       - name: Configure npm authentication
         working-directory: ${{ inputs.path }}
