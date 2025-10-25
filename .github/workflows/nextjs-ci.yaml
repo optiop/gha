@@ -105,7 +105,7 @@ jobs:
           cp -R ${{ inputs.path }}/public/* ${{ inputs.path }}/out/ || true
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ inputs.s3-bucket }}
           path: ${{ inputs.path }}/out/**
