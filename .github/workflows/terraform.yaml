@@ -1,0 +1,83 @@
+---
+name: Provision via Terraform
+
+# yamllint disable
+on:
+  workflow_call:
+    inputs:
+      path:
+        required: false
+        type: string
+        default: ops
+      aws-region:
+        required: false
+        type: string
+        default: eu-central-1
+      aws-iam-role-arn:
+        required: true
+        type: string
+    secrets:
+      github-token:
+        description: Token to download Terraform modules from GitHub
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+
+  provision:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.aws-iam-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Setup Git for Private Modules
+        run: |
+          git config --global url."https://mehr74:${{ secrets.github-token }}@github.com/optiop".insteadOf "https://github.com/optiop"
+
+      - name: Terraform init
+        run: terraform -chdir=${{ inputs.path }} init -no-color
+
+      - name: Terraform validate
+        run: terraform -chdir=${{ inputs.path }} validate -no-color
+
+      - name: Terraform plan
+        id: plan
+        run: terraform -chdir=${{ inputs.path }} plan -no-color
+
+      - name: Terraform apply
+        id: apply
+        run: terraform -chdir=${{ inputs.path }} apply -auto-approve -no-color
+        continue-on-error: true
