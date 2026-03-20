@@ -108,7 +108,7 @@ jobs:
 
       - name: Test backend
         if: steps.check-for-backend.outputs.has-backend == 'true'
-        uses: magefile/mage-action@v3
+        uses: magefile/mage-action@v4
         with:
           version: latest
           args: coverage
@@ -116,7 +116,7 @@ jobs:
 
       - name: Build backend for AMD64
         if: steps.check-for-backend.outputs.has-backend == 'true'
-        uses: magefile/mage-action@v3
+        uses: magefile/mage-action@v4
         with:
           version: latest
           args: build:linux
@@ -124,7 +124,7 @@ jobs:
 
       - name: Build backend for ARM64
         if: steps.check-for-backend.outputs.has-backend == 'true'
-        uses: magefile/mage-action@v3
+        uses: magefile/mage-action@v4
         with:
           version: latest
           args: build:linuxARM64
