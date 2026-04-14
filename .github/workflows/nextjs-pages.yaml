@@ -98,7 +98,7 @@ jobs:
           cp -R ${{ inputs.path }}/public/* ${{ inputs.path }}/out/ || true
 
       - name: Upload build artifacts
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages
           path: ${{ inputs.path }}/out
